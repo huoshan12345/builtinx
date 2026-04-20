@@ -1,16 +1,16 @@
 {
-  "name": "builtx",
+  "name": "builtinx",
   "version": "0.1.0",
   "description": "Extensions for JavaScript built-ins and web platform objects",
   "type": "module",
-  "main": "dist/builtx.cjs",
-  "module": "dist/builtx.js",
+  "main": "dist/builtinx.cjs",
+  "module": "dist/builtinx.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/builtx.js",
-      "require": "./dist/builtx.cjs"
+      "import": "./dist/builtinx.js",
+      "require": "./dist/builtinx.cjs"
     }
   },
   "files": [

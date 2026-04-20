@@ -10,8 +10,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.ts',
-      name: 'Builtx',
-      fileName: 'builtx',
+      fileName: 'builtinx',
       formats: ['es', 'cjs']
     }
   }
