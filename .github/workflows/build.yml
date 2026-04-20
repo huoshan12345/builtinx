@@ -1,0 +1,106 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build.yml
+      - tsconfig.json
+      - package.json
+      - '*.js'
+      - '*.ts'
+      - src/**
+      - test/**
+  pull_request_target: # use pull_request_target instead of pull_request to let dependabot have permission to access action secrets.
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+  contents: write
+  statuses: write
+  checks: write
+  actions: write
+  id-token: write
+
+env:
+  DOTNET_NOLOGO: 1
+  IS_PUSH_DEFAULT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: suzuki-shunsuke/get-pr-action@v0.1.0
+        id: pr
+
+      - name: Print variables
+        shell: pwsh
+        run: |
+          echo "merge_commit_sha: ${{ steps.pr.outputs.merge_commit_sha }}"
+          echo "IS_PUSH_DEFAULT: ${{ env.IS_PUSH_DEFAULT }}"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.merge_commit_sha }}
+
+      - name: Read version from package.json
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          echo "VERSION: $VERSION"
+          echo "NAME: $NAME"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install dependencies with pnpm
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with pnpm
+        run: pnpm test
+
+      - name: Publish with pnpm
+        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        run: |
+          if npm view "${{ env.NAME }}@${{ env.VERSION }}" version > /dev/null 2>&1; then            
+            echo "Version ${{ env.VERSION }} already exists on npm. Skipping publish."
+          else
+            echo "Publishing version ${{ env.VERSION }} to npm..."
+            pnpm build
+            pnpm publish --no-git-checks --access public --provenance
+          fi
+
+      - name: Create Tag
+        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        uses: huoshan12345/update-tag@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          update_if_exists: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      - name: Create Release
+        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
+          token: ${{ secrets.PAT }}
+          skipIfReleaseExists: true
+          generateReleaseNotes: true
+...
