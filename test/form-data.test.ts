@@ -1,5 +1,3 @@
-import '@/extensions/form-data';
-
 describe("FormData.prototype.add", () => {
   it("appends string value", () => {
     const fd = new FormData();

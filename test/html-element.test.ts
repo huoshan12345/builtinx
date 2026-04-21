@@ -1,5 +1,3 @@
-import "@/extensions/html-element";
-
 beforeEach(() => {
   document.body.innerHTML = "";
 });

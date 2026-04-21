@@ -1,5 +1,3 @@
-import "@/extensions/array";
-
 describe("Array.cast", () => {
   it("returns same array instance when input is array", () => {
     const arr = [1, 2, 3];

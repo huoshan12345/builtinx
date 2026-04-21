@@ -1,5 +1,3 @@
-import "@/extensions/blob";
-
 describe("Blob.prototype.toBase64", () => {
   it("converts text blob to base64", async () => {
     const blob = new Blob(["hello"], { type: "text/plain" });

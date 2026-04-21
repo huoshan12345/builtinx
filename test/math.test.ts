@@ -1,5 +1,3 @@
-import "@/extensions/math";
-
 describe("Math.randomInt", () => {
   it("returns integer in inclusive range [0, max] when one argument is provided", () => {
     for (let i = 0; i < 100; i++) {

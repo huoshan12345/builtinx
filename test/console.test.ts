@@ -1,5 +1,3 @@
-import "@/extensions/console";
-
 describe("console.styled", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
