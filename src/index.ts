@@ -13,7 +13,12 @@ import '@/extensions/regexp';
 import '@/extensions/response';
 import '@/extensions/storage';
 import '@/extensions/string';
+import '@/extensions/url-ex';
+import '@/extensions/url-search-params';
 
 export * from "@/types/lib";
 
 export * from "@/utils/object";
+export * from "@/utils/time-span";
+export * from "@/utils/lazy";
+export * from "@/utils/string-builder";
