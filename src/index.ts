@@ -15,6 +15,7 @@ import '@/extensions/storage';
 import '@/extensions/string';
 import '@/extensions/url-ex';
 import '@/extensions/url-search-params';
+import '@/extensions/url';
 
 export * from "@/types/lib";
 
