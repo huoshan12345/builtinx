@@ -3,16 +3,9 @@
   "version": "0.1.0",
   "description": "Extensions for JavaScript built-ins and web platform objects",
   "type": "module",
-  "main": "dist/builtinx.cjs",
-  "module": "dist/builtinx.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/builtinx.js",
-      "require": "./dist/builtinx.cjs"
-    }
-  },
+  "exports": "./dist/index.js",
   "files": [
     "dist",
     "README.md",
@@ -24,7 +17,7 @@
     "preinstall": "npx only-allow pnpm",
     "clean": "shx rm -rf dist/** && shx rm -f *.tgz",
     "dev": "vite",
-    "build": "vite build && tsc --emitDeclarationOnly",
+    "build": "pnpm run clean && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
@@ -37,6 +30,7 @@
     "shx": "^0.4.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0",
+    "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.1.0",
     "vitest-canvas-mock": "^1.1.4"
   }
