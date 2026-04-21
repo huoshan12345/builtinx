@@ -3,18 +3,90 @@ import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
   interface String {
+    /**
+     * Returns whether the string contains the specified text or matches the specified pattern.
+     *
+     * When `pattern` is a string, this method uses substring search semantics.
+     * When `pattern` is a regular expression, this method returns true when any match exists.
+     */
     has(pattern: MatchPattern): boolean;
+
+    /**
+     * Returns whether the string contains or matches any of the specified patterns.
+     *
+     * Returns false when `patterns` is empty.
+     */
     hasAny(patterns: MatchPattern[]): boolean;
-    is(pattern: MatchPattern): boolean;
+
+    /**
+     * Returns whether the string matches the specified value or pattern.
+     *
+     * When `pattern` is a string, this method performs exact string equality.
+     * When `pattern` is a regular expression, this method returns true when any match exists.
+     */
+    matches(pattern: MatchPattern): boolean;
+
+    /**
+     * Returns the substring after the specified separator.
+     *
+     * If `skipSeparator` is false, the returned substring starts at the separator.
+     * If `untilLast` is true, the last occurrence of the separator is used.
+     * Returns the original string when the separator is not found.
+     */
     skipUntil(separator: string, skipSeparator?: boolean, untilLast?: boolean): string;
+
+    /**
+     * Returns the substring before the specified separator.
+     *
+     * If `includeSeparator` is true, the returned substring ends after the separator.
+     * If `untilLast` is true, the last occurrence of the separator is used.
+     * Returns the original string when the separator is not found.
+     */
     takeUntil(separator: string, includeSeparator?: boolean, untilLast?: boolean): string;
+
+    /**
+     * Returns the specified fallback value when the string is empty.
+     */
     ifEmpty(value: string): string;
-    toFloat(): number;
-    toInt(radix?: number): number;
+
+    /**
+     * Parses a floating-point number from the start of the string.
+     *
+     * Uses the same behavior as `Number.parseFloat`.
+     */
+    parseFloat(): number;
+
+    /**
+     * Parses an integer from the start of the string.
+     *
+     * Uses the same behavior as `Number.parseInt`.
+     */
+    parseInt(radix?: number): number;
+
+    /**
+     * Creates a regular expression from the string.
+     */
     toRegExp(flags?: string): RegExp;
+
+    /**
+     * Wraps the string in parentheses.
+     */
     parenthesize(): string;
+
+    /**
+     * Decodes HTML entities in the string.
+     *
+     * Literal markup is preserved and not stripped.
+     */
     unescapeHtml(): string;
+
+    /**
+     * Compares two strings using ASCII-only case-insensitive matching.
+     *
+     * Non-ASCII characters are compared exactly.
+     */
     equalsIgnoreAsciiCase(value: Nullable<string>): boolean;
+
     /**
      * Trims the specified characters from both ends of the string.
      *
@@ -36,7 +108,7 @@ function hasAny(this: string, patterns: MatchPattern[]) {
   return patterns.some(m => has.call(this, m));
 };
 
-function is(this: string, pattern: MatchPattern) {
+function matches(this: string, pattern: MatchPattern) {
   if (typeof pattern === 'string') {
     return this === pattern;
   } else {
@@ -50,12 +122,12 @@ function skipUntil(this: string, separator: string, skipSeparator: boolean = tru
     : this.indexOf(separator);
 
   if (location < 0)
-    return this as string;
+    return this;
 
   if (skipSeparator)
     location += separator.length;
 
-  return this.substring(location) as string;
+  return this.substring(location);
 };
 
 function takeUntil(this: string, separator: string, includeSeparator: boolean = true, untilLast: boolean = false) {
@@ -64,34 +136,34 @@ function takeUntil(this: string, separator: string, includeSeparator: boolean = 
     : this.indexOf(separator);
 
   if (location < 0)
-    return this as string;
+    return this;
 
   if (includeSeparator)
     location += separator.length;
 
-  return this.substring(0, location) as string;
+  return this.substring(0, location);
 };
 
 function ifEmpty(this: string, value: string) {
   return this.length > 0
-    ? this as string
+    ? this
     : value;
 };
 
-function toFloat(this: string): number {
-  return Number.parseFloat(this as string);
+function parseFloat(this: string): number {
+  return Number.parseFloat(this);
 };
 
-function toInt(this: string, radix?: number): number {
-  return Number.parseInt(this as string, radix);
+function parseInt(this: string, radix?: number): number {
+  return Number.parseInt(this, radix);
 };
 
 function toRegExp(this: string, flags?: string): RegExp {
-  return new RegExp(this as string, flags);
+  return new RegExp(this, flags);
 };
 
 function parenthesize(this: string): string {
-  return '(' + this as string + ')';
+  return '(' + this + ')';
 };
 
 function unescapeHtml(this: string): string {
@@ -131,7 +203,7 @@ function equalsIgnoreAsciiCase(this: string, value: Nullable<string>): boolean {
 };
 
 function trimChars(this: string, chars: string): string {
-  const str = this as string;
+  const str = this;
 
   if (!str || !chars)
     return str;
@@ -161,12 +233,12 @@ function trimChars(this: string, chars: string): string {
 
 definePropertyIfAbsent(String.prototype, 'has', has);
 definePropertyIfAbsent(String.prototype, 'hasAny', hasAny);
-definePropertyIfAbsent(String.prototype, 'is', is);
+definePropertyIfAbsent(String.prototype, 'matches', matches);
 definePropertyIfAbsent(String.prototype, 'skipUntil', skipUntil);
 definePropertyIfAbsent(String.prototype, 'takeUntil', takeUntil);
 definePropertyIfAbsent(String.prototype, 'ifEmpty', ifEmpty);
-definePropertyIfAbsent(String.prototype, 'toFloat', toFloat);
-definePropertyIfAbsent(String.prototype, 'toInt', toInt);
+definePropertyIfAbsent(String.prototype, 'parseFloat', parseFloat);
+definePropertyIfAbsent(String.prototype, 'parseInt', parseInt);
 definePropertyIfAbsent(String.prototype, 'toRegExp', toRegExp);
 definePropertyIfAbsent(String.prototype, 'parenthesize', parenthesize);
 definePropertyIfAbsent(String.prototype, 'unescapeHtml', unescapeHtml);
