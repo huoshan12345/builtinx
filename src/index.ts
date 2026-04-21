@@ -17,9 +17,12 @@ import '@/extensions/url-ex';
 import '@/extensions/url-search-params';
 import '@/extensions/url';
 
-export * from "@/types/lib";
+import "@/helpers";
 
+export * from "@/types/lib";
 export * from "@/utils/object";
 export * from "@/utils/time-span";
 export * from "@/utils/lazy";
 export * from "@/utils/string-builder";
+
+
