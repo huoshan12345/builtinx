@@ -3,14 +3,61 @@ import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
   interface URLSearchParams {
+    /**
+     * Returns the last value of the key parsed as a base-10 integer.
+     *
+     * Returns `defaultValue` when the key is missing, empty, or not a valid integer prefix.
+     */
     getInt(key: string, defaultValue?: number): number;
+
+    /**
+     * Returns whether the last value of the key is equal to `"true"` ignoring ASCII case.
+     *
+     * Returns `defaultValue` when the key is missing or its value is empty.
+     */
     getBool(key: string, defaultValue?: boolean): boolean;
+
+    /**
+     * Sets a boolean value for the key.
+     *
+     * When `removeIfFalse` is true, false removes the key instead of writing `"false"`.
+     */
     setBool(key: string, value: boolean, removeIfFalse?: boolean): URLSearchParams;
+
+    /**
+     * Returns whether at least one query parameter exists.
+     */
     any(): boolean;
-    distinct(): void;
-    from(params: [string, string][] | URLSearchParams): URLSearchParams;
-    contains(key: string, value: string): boolean;
+
+    /**
+     * Ensures each key appears at most once by keeping only its last value.
+     */
+    distinct(): URLSearchParams;
+
+    /**
+     * Sets values from another parameter source onto the current instance.
+     *
+     * Each incoming pair is applied using `set`, so later values overwrite earlier ones.
+     */
+    setFrom(params: Iterable<[string, string]>): URLSearchParams;
+
+    /**
+     * Returns whether the effective value of the key equals the specified value.
+     *
+     * When multiple values exist for the same key, only the last value is considered effective.
+     */
+    hasEffectiveValue(key: string, value: string): boolean;
+
+    /**
+     * Sets the value only when the key does not already exist.
+     */
     trySet(name: string, value: string): URLSearchParams;
+
+    /**
+     * Appends one or more values for the key.
+     *
+     * Nullish values are appended as empty strings.
+     */
     add(name: string, value: Nullishable<string> | Nullishable<string>[]): URLSearchParams;
   }
 }
@@ -18,8 +65,8 @@ declare global {
 function getInt(this: URLSearchParams, key: string, defaultValue = 0): number {
   const v = this.get(key);
   if (v) {
-    const num = parseInt(v);
-    if (!isNaN(num))
+    const num = Number.parseInt(v, 10);
+    if (!Number.isNaN(num))
       return num;
   }
   return defaultValue;
@@ -28,7 +75,7 @@ function getInt(this: URLSearchParams, key: string, defaultValue = 0): number {
 function getBool(this: URLSearchParams, key: string, defaultValue = false): boolean {
   const v = this.get(key);
   if (v) {
-    return v === 'true';
+    return v.equalsIgnoreAsciiCase("true");
   }
   return defaultValue;
 };
@@ -38,7 +85,8 @@ function any(this: URLSearchParams): boolean {
 };
 
 function distinct(this: URLSearchParams): URLSearchParams {
-  for (const key of this.keys()) {
+  const keys = [...this.keys()].distinct();
+  for (const key of keys) {
     const values = this.getAll(key);
     if (values.length > 1) {
       this.delete(key);
@@ -48,14 +96,14 @@ function distinct(this: URLSearchParams): URLSearchParams {
   return this;
 };
 
-function from(this: URLSearchParams, params: [string, string][] | URLSearchParams): URLSearchParams {
+function setFrom(this: URLSearchParams, params: Iterable<[string, string]>): URLSearchParams {
   for (const [key, value] of params) {
     this.set(key, value);
   }
   return this;
 };
 
-function contains(this: URLSearchParams, key: string, value: string): boolean {
+function hasEffectiveValue(this: URLSearchParams, key: string, value: string): boolean {
   const values = this.getAll(key);
   // NOTE: This is a consequence of jsdom using vm contexts to execute JavaScript on the page. 
   // Each vm context has its own copy of the globals, including Array.
@@ -83,10 +131,10 @@ function trySet(this: URLSearchParams, name: string, value: string): URLSearchPa
 function add(this: URLSearchParams, name: string, value: Nullishable<string> | Nullishable<string>[]): URLSearchParams {
   if (Array.isArray(value)) {
     for (const v of value) {
-      this.append(name, v || '');
+      this.append(name, v ?? '');
     }
   } else {
-    this.append(name, value || '');
+    this.append(name, value ?? '');
   }
   return this;
 };
@@ -96,7 +144,7 @@ definePropertyIfAbsent(URLSearchParams.prototype, "getBool", getBool);
 definePropertyIfAbsent(URLSearchParams.prototype, "setBool", setBool);
 definePropertyIfAbsent(URLSearchParams.prototype, "any", any);
 definePropertyIfAbsent(URLSearchParams.prototype, "distinct", distinct);
-definePropertyIfAbsent(URLSearchParams.prototype, "from", from);
-definePropertyIfAbsent(URLSearchParams.prototype, "contains", contains);
+definePropertyIfAbsent(URLSearchParams.prototype, "setFrom", setFrom);
+definePropertyIfAbsent(URLSearchParams.prototype, "hasEffectiveValue", hasEffectiveValue);
 definePropertyIfAbsent(URLSearchParams.prototype, "trySet", trySet);
 definePropertyIfAbsent(URLSearchParams.prototype, "add", add);
