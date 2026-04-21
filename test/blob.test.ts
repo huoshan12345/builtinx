@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import "@/extensions/blob";
 
 describe("Blob.prototype.toBase64", () => {
