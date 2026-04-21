@@ -1,4 +1,4 @@
-import { definePropertyIfAbsent } from "@/internal/utils";
+import { definePropertyIfAbsent } from "@/utils/object";
 
 declare global {
   interface Math {
