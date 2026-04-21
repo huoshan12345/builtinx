@@ -3,20 +3,85 @@ import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
   interface URL {
+    /**
+     * Sets a query parameter on the URL.
+     *
+     * Nullish values are converted to an empty string.
+     * Other values are converted using `toString()`.
+     * Empty values remove the key when `removeIfEmpty` is true.
+     */
     setParam(key: string, value: unknown, removeIfEmpty?: boolean): URL;
+
+    /**
+     * Returns the last value of a query parameter.
+     */
     getParam(key: string): string | null;
-    getParam<T>(key: string, func: (key: string) => T): Nullable<T>;
+
+    /**
+     * Returns the transformed last value of a query parameter.
+     */
+    getParam<T>(key: string, transform: (value: string) => T): Nullable<T>;
+
+    /**
+     * Returns the last value of a query parameter parsed as a number.
+     *
+     * Returns null when the key is missing or the value is not numeric.
+     */
     getNumberParam(key: string): Nullable<number>;
+
+    /**
+     * Returns whether a query parameter exists.
+     *
+     * When `value` is provided, only the effective last value is compared.
+     */
     hasParam(key: string, value?: string): boolean;
+
+    /**
+     * Sets query parameters from another iterable source using `set` semantics.
+     */
     setParamsFrom(params: Iterable<QueryParam>): URL;
+
+    /**
+     * Deletes a query parameter and returns the URL.
+     */
     deleteParam(key: string): URL;
+
+    /**
+     * Deletes a query parameter when it matches the optional value.
+     */
     tryDeleteParam(key: string, value?: string): boolean;
-    getParams(keys: string[]): QueryParams;
+
+    /**
+     * Returns existing query parameters for the specified keys.
+     */
+    getParams(keys: Iterable<string>): QueryParams;
+
+    /**
+     * Sets a boolean query parameter using URLSearchParams boolean semantics.
+     */
     setBool(key: string, value: boolean, removeIfFalse?: boolean): URL;
-    goto(openInNewTab?: boolean): void;
+
+    /**
+     * Navigates to this URL.
+     */
+    goto(openInNewTab?: boolean, noReferrer?: boolean): void;
+
+    /**
+     * Updates the hostname and optionally the port of the URL in place.
+     */
     setHost(host: string, port?: number): URL;
+
+    /**
+     * Updates the protocol of the URL in place.
+     *
+     * A trailing colon is added automatically when missing.
+     */
     setProtocol(protocol: string): URL;
-    combine(path: string): URL;
+
+    /**
+     * Resolves a relative or absolute URL reference against this URL.
+     */
+    resolve(path: string): URL;
   }
 }
 
@@ -32,18 +97,23 @@ function setParam(this: URL, key: string, value: unknown, removeIfEmpty: boolean
 };
 
 function getParam(this: URL, key: string): string | null;
-function getParam<T>(this: URL, key: string, func?: (key: string) => T): T | null;
-function getParam<T>(this: URL, key: string, func?: (key: string) => T): T | string | null {
-  const value = this.searchParams.get(key);
-  if (func === undefined || value === null) {
+function getParam<T>(this: URL, key: string, transform?: (value: string) => T): T | null;
+function getParam<T>(this: URL, key: string, transform?: (value: string) => T): T | string | null {
+  const value = this.searchParams.getEffectiveValue(key);
+  if (transform === undefined || value === null) {
     return value;
   } else {
-    return func(value);
+    return transform(value);
   }
 }
 
 function getNumberParam(this: URL, key: string) {
-  return this.getParam(key, v => +v);
+  return this.getParam(key, value => {
+    const number = Number(value);
+    return Number.isNaN(number)
+      ? null
+      : number;
+  });
 };
 
 function hasParam(this: URL, key: string, value?: string) {
@@ -70,7 +140,7 @@ function tryDeleteParam(this: URL, key: string, value?: string) {
   return false;
 };
 
-function getParams(this: URL, keys: string[]) {
+function getParams(this: URL, keys: Iterable<string>) {
   const arr: QueryParams = [];
   for (const key of keys) {
     const value = this.getParam(key);
@@ -86,13 +156,13 @@ function setBool(this: URL, key: string, value: boolean, removeIfFalse: boolean 
   return this;
 };
 
-function goto(this: URL, openInNewTab: boolean = false) {
-  URLEx.goto(this, openInNewTab);
+function goto(this: URL, openInNewTab: boolean = false, noReferrer: boolean = false) {
+  URLEx.goto(this, openInNewTab, noReferrer);
 };
 
 function setHost(this: URL, host: string, port?: number) {
   this.hostname = host;
-  if (port) {
+  if (port !== undefined) {
     this.port = port.toString();
   }
   return this;
@@ -106,7 +176,7 @@ function setProtocol(this: URL, protocol: string) {
   return this;
 };
 
-function combine(this: URL, path: string) {
+function resolve(this: URL, path: string) {
   return new URL(path, this);
 };
 
@@ -122,4 +192,4 @@ definePropertyIfAbsent(URL.prototype, 'setBool', setBool);
 definePropertyIfAbsent(URL.prototype, 'goto', goto);
 definePropertyIfAbsent(URL.prototype, 'setHost', setHost);
 definePropertyIfAbsent(URL.prototype, 'setProtocol', setProtocol);
-definePropertyIfAbsent(URL.prototype, 'combine', combine);
+definePropertyIfAbsent(URL.prototype, 'resolve', resolve);

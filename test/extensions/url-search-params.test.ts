@@ -150,6 +150,18 @@ describe("URLSearchParams.prototype.setFrom", () => {
 });
 
 describe("URLSearchParams.prototype.hasEffectiveValue", () => {
+  it("returns the last value for the key", () => {
+    const params = new URLSearchParams("a=1&a=2");
+
+    expect(params.getEffectiveValue("a")).toBe("2");
+  });
+
+  it("returns null when the key is missing", () => {
+    const params = new URLSearchParams();
+
+    expect(params.getEffectiveValue("a")).toBeNull();
+  });
+
   it("returns true when the last value matches", () => {
     const params = new URLSearchParams("a=1&a=2");
 

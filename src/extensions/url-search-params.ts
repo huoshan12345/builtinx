@@ -42,6 +42,13 @@ declare global {
     setFrom(params: Iterable<[string, string]>): URLSearchParams;
 
     /**
+     * Returns the effective value of the key.
+     *
+     * When multiple values exist for the same key, only the last value is considered effective.
+     */
+    getEffectiveValue(key: string): string | null;
+
+    /**
      * Returns whether the effective value of the key equals the specified value.
      *
      * When multiple values exist for the same key, only the last value is considered effective.
@@ -103,13 +110,19 @@ function setFrom(this: URLSearchParams, params: Iterable<[string, string]>): URL
   return this;
 };
 
-function hasEffectiveValue(this: URLSearchParams, key: string, value: string): boolean {
+function getEffectiveValue(this: URLSearchParams, key: string): string | null {
   const values = this.getAll(key);
   // NOTE: This is a consequence of jsdom using vm contexts to execute JavaScript on the page. 
   // Each vm context has its own copy of the globals, including Array.
   // https://github.com/jsdom/jsdom/issues/2261
   const arr = Array.cast(values);
-  return values.length > 0 && arr.last() === value;
+  return values.length > 0
+    ? arr.last()
+    : null;
+};
+
+function hasEffectiveValue(this: URLSearchParams, key: string, value: string): boolean {
+  return this.getEffectiveValue(key) === value;
 };
 
 function setBool(this: URLSearchParams, key: string, value: boolean, removeIfFalse: boolean = true): URLSearchParams {
@@ -145,6 +158,7 @@ definePropertyIfAbsent(URLSearchParams.prototype, "setBool", setBool);
 definePropertyIfAbsent(URLSearchParams.prototype, "any", any);
 definePropertyIfAbsent(URLSearchParams.prototype, "distinct", distinct);
 definePropertyIfAbsent(URLSearchParams.prototype, "setFrom", setFrom);
+definePropertyIfAbsent(URLSearchParams.prototype, "getEffectiveValue", getEffectiveValue);
 definePropertyIfAbsent(URLSearchParams.prototype, "hasEffectiveValue", hasEffectiveValue);
 definePropertyIfAbsent(URLSearchParams.prototype, "trySet", trySet);
 definePropertyIfAbsent(URLSearchParams.prototype, "add", add);
