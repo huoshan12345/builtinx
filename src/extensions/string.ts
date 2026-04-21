@@ -1,43 +1,50 @@
 import { MatchPattern, Nullable } from "@/types/lib";
+import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
   interface String {
-    contains(pattern: MatchPattern): boolean;
-    containsAny(patterns: MatchPattern[]): boolean;
-    equals(pattern: MatchPattern): boolean;
+    has(pattern: MatchPattern): boolean;
+    hasAny(patterns: MatchPattern[]): boolean;
+    is(pattern: MatchPattern): boolean;
     skipUntil(separator: string, skipSeparator?: boolean, untilLast?: boolean): string;
     takeUntil(separator: string, includeSeparator?: boolean, untilLast?: boolean): string;
     ifEmpty(value: string): string;
-    toNumber(): number;
+    toFloat(): number;
+    toInt(radix?: number): number;
     toRegExp(flags?: string): RegExp;
     parenthesize(): string;
-    htmlUnescape(): string;
+    unescapeHtml(): string;
     equalsIgnoreAsciiCase(value: Nullable<string>): boolean;
+    /**
+     * Trims the specified characters from both ends of the string.
+     *
+     * Characters are matched by Unicode code point, not grapheme cluster.
+     */
     trimChars(chars: string): string;
   }
 }
 
-String.prototype.contains = function (pattern: MatchPattern) {
+function has(this: string, pattern: MatchPattern) {
   if (typeof pattern === 'string') {
     return this.includes(pattern);
   } else {
-    return pattern.test(this as string);
+    return !!pattern.find(this);
   }
 };
 
-String.prototype.containsAny = function (patterns: MatchPattern[]) {
-  return patterns.some(m => this.contains(m));
+function hasAny(this: string, patterns: MatchPattern[]) {
+  return patterns.some(m => has.call(this, m));
 };
 
-String.prototype.equals = function (pattern: MatchPattern) {
+function is(this: string, pattern: MatchPattern) {
   if (typeof pattern === 'string') {
     return this === pattern;
   } else {
-    return pattern.test(this as string);
+    return !!pattern.find(this);
   }
 };
 
-String.prototype.skipUntil = function (separator: string, skipSeparator: boolean = true, untilLast: boolean = false) {
+function skipUntil(this: string, separator: string, skipSeparator: boolean = true, untilLast: boolean = false) {
   let location = untilLast
     ? this.lastIndexOf(separator)
     : this.indexOf(separator);
@@ -51,7 +58,7 @@ String.prototype.skipUntil = function (separator: string, skipSeparator: boolean
   return this.substring(location) as string;
 };
 
-String.prototype.takeUntil = function (separator: string, includeSeparator: boolean = true, untilLast: boolean = false) {
+function takeUntil(this: string, separator: string, includeSeparator: boolean = true, untilLast: boolean = false) {
   let location = untilLast
     ? this.lastIndexOf(separator)
     : this.indexOf(separator);
@@ -65,31 +72,35 @@ String.prototype.takeUntil = function (separator: string, includeSeparator: bool
   return this.substring(0, location) as string;
 };
 
-String.prototype.ifEmpty = function (value: string) {
+function ifEmpty(this: string, value: string) {
   return this.length > 0
     ? this as string
     : value;
 };
 
-String.prototype.toNumber = function (): number {
-  return parseFloat(this as string);
+function toFloat(this: string): number {
+  return Number.parseFloat(this as string);
 };
 
-String.prototype.toRegExp = function (flags?: string): RegExp {
+function toInt(this: string, radix?: number): number {
+  return Number.parseInt(this as string, radix);
+};
+
+function toRegExp(this: string, flags?: string): RegExp {
   return new RegExp(this as string, flags);
 };
 
-String.prototype.parenthesize = function (): string {
+function parenthesize(this: string): string {
   return '(' + this as string + ')';
 };
 
-String.prototype.htmlUnescape = function (): string {
-  const div = document.createElement("div");
-  div.innerHTML = this as string;
-  return div.textContent || div.innerText || "";
-};
+function unescapeHtml(this: string): string {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = this;
+  return textarea.value;
+}
 
-String.prototype.equalsIgnoreAsciiCase = function (value: Nullable<string>): boolean {
+function equalsIgnoreAsciiCase(this: string, value: Nullable<string>): boolean {
   if (value == null) {
     return false;
   }
@@ -111,7 +122,7 @@ String.prototype.equalsIgnoreAsciiCase = function (value: Nullable<string>): boo
     if (ca !== cb)
       return false;
 
-    // 根据 code point 决定步进 1 还是 2（避免拆 emoji）
+    // according to code point, decide whether to step 1 or 2 (to avoid splitting emoji)
     i += ca > 0xFFFF ? 2 : 1;
     j += cb > 0xFFFF ? 2 : 1;
   }
@@ -119,37 +130,45 @@ String.prototype.equalsIgnoreAsciiCase = function (value: Nullable<string>): boo
   return i === la && j === lb;
 };
 
-String.prototype.trimChars = function (chars: string): string {
+function trimChars(this: string, chars: string): string {
   const str = this as string;
 
   if (!str || !chars)
     return str;
 
-  // 构建查表（只构建一次）
-  const table = new Set<string>();
-  for (let i = 0; i < chars.length; i++) {
-    table.add(chars[i]);
-  }
+  const table = new Set(Array.from(chars));
+  const codePoints = Array.from(str);
 
   let start = 0;
-  let end = str.length - 1;
+  let end = codePoints.length - 1;
 
-  // 从左边扫描
-  while (start <= end && table.has(str[start])) {
+  while (start <= end && table.has(codePoints[start])) {
     start++;
   }
 
-  // 从右边扫描
-  while (end >= start && table.has(str[end])) {
+  while (end >= start && table.has(codePoints[end])) {
     end--;
   }
 
-  // 全被 trim
-  if (start === 0 && end === str.length - 1) {
-    return str; // 没变化直接返回原字符串（避免分配）
+  if (start === 0 && end === codePoints.length - 1) {
+    return str;
   }
 
   return start > end
     ? ""
-    : str.slice(start, end + 1);
+    : codePoints.slice(start, end + 1).join("");
 };
+
+definePropertyIfAbsent(String.prototype, 'has', has);
+definePropertyIfAbsent(String.prototype, 'hasAny', hasAny);
+definePropertyIfAbsent(String.prototype, 'is', is);
+definePropertyIfAbsent(String.prototype, 'skipUntil', skipUntil);
+definePropertyIfAbsent(String.prototype, 'takeUntil', takeUntil);
+definePropertyIfAbsent(String.prototype, 'ifEmpty', ifEmpty);
+definePropertyIfAbsent(String.prototype, 'toFloat', toFloat);
+definePropertyIfAbsent(String.prototype, 'toInt', toInt);
+definePropertyIfAbsent(String.prototype, 'toRegExp', toRegExp);
+definePropertyIfAbsent(String.prototype, 'parenthesize', parenthesize);
+definePropertyIfAbsent(String.prototype, 'unescapeHtml', unescapeHtml);
+definePropertyIfAbsent(String.prototype, 'equalsIgnoreAsciiCase', equalsIgnoreAsciiCase);
+definePropertyIfAbsent(String.prototype, 'trimChars', trimChars);
