@@ -1,5 +1,4 @@
 import { definePropertyIfAbsent } from '@/utils/object';
-import "@/extensions/math";
 
 declare global {
   interface Array<T> {

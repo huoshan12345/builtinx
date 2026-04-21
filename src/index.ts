@@ -6,7 +6,9 @@ import '@/extensions/error';
 import '@/extensions/form-data';
 import '@/extensions/html-element';
 import '@/extensions/math';
-import '@/extensions/html-element';
+import '@/extensions/node';
+import '@/extensions/promise';
+import '@/extensions/regexp';
 import '@/extensions/string';
 
 export * from "@/types/lib";

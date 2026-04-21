@@ -1,5 +1,4 @@
 import { definePropertyIfAbsent } from '@/utils/object';
-import './element';
 
 declare global {
   interface HTMLElement {
