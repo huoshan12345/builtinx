@@ -11,6 +11,7 @@ import '@/extensions/node';
 import '@/extensions/promise';
 import '@/extensions/regexp';
 import '@/extensions/response';
+import '@/extensions/storage';
 import '@/extensions/string';
 
 export * from "@/types/lib";
