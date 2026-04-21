@@ -1,0 +1,126 @@
+import type { Extractor } from "@/types/lib";
+
+describe("RegExpExecArray.prototype.replaceMatch", () => {
+  it("replaces the matched substring in the original input", () => {
+    const match = /ab/.find("xxabyy");
+
+    expect(match).not.toBeNull();
+    expect(match!.replaceMatch("CD")).toBe("xxCDyy");
+  });
+
+  it("inserts replacement text for zero-length matches", () => {
+    const match = /(?=b)/.find("ab");
+
+    expect(match).not.toBeNull();
+    expect(match!.replaceMatch("X")).toBe("aXb");
+  });
+});
+
+describe("Array.prototype.rewrite", () => {
+  it("returns normalized input when rule array is empty", () => {
+    expect(([] as RegExp[]).rewrite("hello", "x")).toBe("hello");
+    expect(([] as RegExp[]).rewrite(null, "x")).toBe("");
+  });
+
+  it("rewrites using regular expressions and a shared replacement", () => {
+    expect([/cat/, /dog/].rewrite("cat and dog", "pet")).toBe("pet and pet");
+  });
+
+  it("defaults replacement text to an empty string for regular-expression rules", () => {
+    expect([/ab/].rewrite("zabz")).toBe("zz");
+  });
+
+  it("treats nullish input as an empty string", () => {
+    expect([/a/].rewrite(undefined, "x")).toBe("");
+  });
+
+  it("restarts from the first extractor after each successful rewrite", () => {
+    const extractors: Extractor<string>[] = [
+      [/cat/, () => "dog"],
+      [/dog/, () => "pet"],
+    ];
+
+    expect(extractors.rewrite("cat")).toBe("pet");
+  });
+
+  it("uses the first matching extractor in the current pass", () => {
+    const extractors: Extractor<string>[] = [
+      [/hello/, () => "hi"],
+      [/hi/, () => "hey"],
+    ];
+
+    expect(extractors.rewrite("hello")).toBe("hey");
+  });
+
+  it("supports extractor replacements based on capture groups", () => {
+    const extractors: Extractor<string>[] = [
+      [/Hello, (\w+)!/, match => `Hi, ${match[1]}!`],
+    ];
+
+    expect(extractors.rewrite("Hello, Alice!")).toBe("Hi, Alice!");
+  });
+
+  it("preserves zero-length matches when replacement does not change the input", () => {
+    expect([/^/].rewrite("abc", "")).toBe("abc");
+  });
+
+  it("leaves global regular expressions with lastIndex reset", () => {
+    const regex = /ab/g;
+
+    expect([regex].rewrite("xxabyy", "CD")).toBe("xxCDyy");
+    expect(regex.lastIndex).toBe(0);
+  });
+});
+
+describe("Array.prototype.extractFirst", () => {
+  it("returns the transformed value from the first matching extractor", () => {
+    const extractors: Extractor<number>[] = [
+      [/\d+/, match => Number(match[0])],
+      [/cat/, () => 0],
+    ];
+
+    expect(extractors.extractFirst("id=42")).toBe(42);
+  });
+
+  it("checks extractors in order", () => {
+    const first = vi.fn(() => "first");
+    const second = vi.fn(() => "second");
+    const extractors: Extractor<string>[] = [
+      [/value/, first],
+      [/value/, second],
+    ];
+
+    expect(extractors.extractFirst("value")).toBe("first");
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).not.toHaveBeenCalled();
+  });
+
+  it("returns null when no extractor matches", () => {
+    const extractors: Extractor<string>[] = [
+      [/cat/, () => "cat"],
+    ];
+
+    expect(extractors.extractFirst("dog")).toBeNull();
+  });
+
+  it("returns null for nullish input", () => {
+    const extractors: Extractor<string>[] = [
+      [/.*/, () => "value"],
+    ];
+
+    expect(extractors.extractFirst(null)).toBeNull();
+    expect(extractors.extractFirst(undefined)).toBeNull();
+  });
+
+  it("returns null for empty string input", () => {
+    const extractors: Extractor<string>[] = [
+      [/.*/, () => "value"],
+    ];
+
+    expect(extractors.extractFirst("")).toBeNull();
+  });
+
+  it("returns null for an empty extractor array", () => {
+    expect(([] as Extractor<string>[]).extractFirst("value")).toBeNull();
+  });
+});

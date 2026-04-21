@@ -29,7 +29,7 @@ declare global {
      *
      * @throws {RangeError} When the array contains no elements.
      */
-    throwIfEmpty<T>(this: T[]): T[];
+    throwIfEmpty<T>(): T[];
 
     /**
      * Returns a random element from the array.
@@ -152,7 +152,7 @@ function isArrayLike<T>(value: unknown): value is ArrayLike<T> {
     && length >= 0;
 }
 
-function hasIndex<T>(this: readonly T[], index: number): boolean {
+function hasIndex<T>(this: T[], index: number): boolean {
   if (!Number.isInteger(index)) {
     return false;
   }
@@ -172,7 +172,7 @@ function removeAt<T>(this: T[], index: number): T | undefined {
   return this.splice(index, 1)[0];
 }
 
-function throwIfEmpty<T>(this: readonly T[]): readonly T[] {
+function throwIfEmpty<T>(this: T[]): T[] {
   if (this.length === 0) {
     throw new RangeError("The array is empty.");
   }
@@ -180,7 +180,7 @@ function throwIfEmpty<T>(this: readonly T[]): readonly T[] {
   return this;
 };
 
-function sample<T>(this: readonly T[]): T | undefined {
+function sample<T>(this: T[]): T | undefined {
   if (this.length === 0) {
     return undefined;
   }
@@ -189,21 +189,21 @@ function sample<T>(this: readonly T[]): T | undefined {
   return this[index];
 };
 
-function first<T>(this: readonly T[]): T {
+function first<T>(this: T[]): T {
   this.throwIfEmpty();
   return this[0];
 }
 
-function last<T>(this: readonly T[]): T {
+function last<T>(this: T[]): T {
   this.throwIfEmpty();
   return this[this.length - 1];
 };
 
-function distinct<T>(this: readonly T[]): T[] {
+function distinct<T>(this: T[]): T[] {
   return [...new Set(this)];
 };
 
-function groupBy<T, TKey>(this: readonly T[], selector: (item: T) => TKey): Map<TKey, T[]> {
+function groupBy<T, TKey>(this: T[], selector: (item: T) => TKey): Map<TKey, T[]> {
   const map = new Map<TKey, T[]>();
   for (const item of this) {
     const key = selector(item);
@@ -217,7 +217,7 @@ function groupBy<T, TKey>(this: readonly T[], selector: (item: T) => TKey): Map<
   return map;
 };
 
-function countBy<T, TKey>(this: readonly T[], selector: (item: T) => TKey): Map<TKey, number> {
+function countBy<T, TKey>(this: T[], selector: (item: T) => TKey): Map<TKey, number> {
   const map = new Map<TKey, number>();
 
   for (const item of this) {
@@ -235,7 +235,7 @@ function append<T>(this: T[], item: T) {
   return this;
 };
 
-function count<T>(this: readonly T[],
+function count<T>(this: T[],
   predicate?: (item: T, index: number, array: readonly T[]) => boolean
 ): number {
   if (!predicate) {

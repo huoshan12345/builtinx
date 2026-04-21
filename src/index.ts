@@ -1,4 +1,5 @@
 import '@/extensions/array';
+import '@/extensions/array.regexp';
 import '@/extensions/blob';
 import '@/extensions/console';
 import '@/extensions/element';
