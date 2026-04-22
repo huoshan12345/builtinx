@@ -11,9 +11,10 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      name: 'builtinx',
-      entry: 'src/index.ts',
-      fileName: 'index',
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        dom: resolve(__dirname, 'src/dom.ts')
+      },
       formats: ['es']
     },
   }
