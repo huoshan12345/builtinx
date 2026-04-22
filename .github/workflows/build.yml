@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/build.yml
       - tsconfig.json
+      - tsconfig.build.json
       - package.json
       - '*.js'
       - '*.ts'
