@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
-import dts from 'vite-plugin-dts';
 
 export default defineConfig({
   resolve: {
@@ -9,12 +8,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    dts({
-      include: ['src/**/*.ts'],
-      entryRoot: 'src',
-      outDir: 'dist',
-      insertTypesEntry: true,
-    }),
   ],
   build: {
     lib: {
@@ -22,6 +15,6 @@ export default defineConfig({
       entry: 'src/index.ts',
       fileName: 'index',
       formats: ['es']
-    }
+    },
   }
 });

@@ -1,15 +1,18 @@
+import { MatchPattern } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
   interface Array<T> {
     /**
-    * Returns whether the specified index can access an element in this array.
-    *
-    * Supports negative indexes:
-    * -1 = last element
-    * -2 = second last element
-    */
-    hasIndex(index: number): boolean;
+     * Checks if the array has an element at the specified index.
+     *
+     * Supports negative indexes:
+     * -1 = last element
+     * -2 = second last element
+     *
+     * @param disallowNegative If true, negative indexes are not allowed and will return false.
+     */
+    hasIndex(index: number, disallowNegative?: boolean): boolean;
 
     /**
      * Removes and returns the element at the specified index.
@@ -106,6 +109,44 @@ declare global {
      * while preserving the original array reference.
      */
     replaceFrom(values: Iterable<T>): this;
+
+    /**
+     * Swaps the elements at the specified indexes.
+     * Supports negative indexes:
+     * -1 = last element
+     * -2 = second last element
+     *
+     * Does nothing if any of the indexes is out of range.
+     */
+    swap(i: number, j: number): this;
+
+    /**
+     * Returns whether any of the specified patterns matches any of the selected string values.
+     *
+     * Returns false when `patterns` is empty.
+     */
+    hasAnyInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+
+    /**
+     * Returns whether any of the specified patterns matches all of the selected string values.
+     *
+     * Returns false when `patterns` is empty.
+     */
+    hasAnyInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+
+    /**
+     * Returns whether all of the specified patterns match any of the selected string values.
+     *
+     * Returns true when `patterns` is empty.
+     */
+    hasAllInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+
+    /**
+     * Returns whether all of the specified patterns match all of the selected string values.
+     *
+     * Returns true when `patterns` is empty.
+     */
+    hasAllInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
   }
 
   interface ArrayConstructor {
@@ -152,12 +193,12 @@ function isArrayLike<T>(value: unknown): value is ArrayLike<T> {
     && length >= 0;
 }
 
-function hasIndex<T>(this: T[], index: number): boolean {
+function hasIndex<T>(this: T[], index: number, disallowNegative?: boolean): boolean {
   if (!Number.isInteger(index)) {
     return false;
   }
 
-  if (index < 0) {
+  if (!disallowNegative && index < 0) {
     index += this.length;
   }
 
@@ -278,6 +319,46 @@ function replaceFrom<T>(this: T[], values: Iterable<T>): T[] {
   return this;
 };
 
+function swap<T>(this: T[], i: number, j: number): T[] {
+  i = i >= 0 ? i : this.length + i;
+  j = j >= 0 ? j : this.length + j;
+
+  if (i === j) {
+    return this;
+  }
+
+  if (!this.hasIndex(i, true) || !this.hasIndex(j, true)) {
+    return this;
+  }
+
+  // indexed access does not support negative indexes, so we have to adjust them beforehand
+  const temp = this[i];
+  this[i] = this[j];
+  this[j] = temp;
+
+  return this;
+};
+
+function hasAnyInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+  const values = this.map(selector);
+  return patterns.some(m => values.some(x => x.has(m)));
+};
+
+function hasAnyInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+  const values = this.map(selector);
+  return patterns.some(m => values.every(x => x.has(m)));
+};
+
+function hasAllInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+  const values = this.map(selector);
+  return patterns.every(m => values.some(x => x.has(m)));
+};
+
+function hasAllInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+  const values = this.map(selector);
+  return patterns.every(m => values.every(x => x.has(m)));
+};
+
 definePropertyIfAbsent(Array, 'cast', cast);
 definePropertyIfAbsent(Array, 'isArrayLike', isArrayLike);
 definePropertyIfAbsent(Array.prototype, 'hasIndex', hasIndex);
@@ -293,3 +374,8 @@ definePropertyIfAbsent(Array.prototype, 'countBy', countBy);
 definePropertyIfAbsent(Array.prototype, 'count', count);
 definePropertyIfAbsent(Array.prototype, 'resize', resize);
 definePropertyIfAbsent(Array.prototype, 'replaceFrom', replaceFrom);
+definePropertyIfAbsent(Array.prototype, 'swap', swap);
+definePropertyIfAbsent(Array.prototype, 'hasAnyInAny', hasAnyInAny);
+definePropertyIfAbsent(Array.prototype, 'hasAnyInAll', hasAnyInAll);
+definePropertyIfAbsent(Array.prototype, 'hasAllInAny', hasAllInAny);
+definePropertyIfAbsent(Array.prototype, 'hasAllInAll', hasAllInAll);

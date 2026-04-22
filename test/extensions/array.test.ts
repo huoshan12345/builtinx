@@ -657,3 +657,216 @@ describe("Array.prototype.replaceFrom", () => {
     expect(arr).toEqual([6]);
   });
 });
+
+describe("Array.prototype.swap", () => {
+  it("should swap two positive indexes", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(0, 2);
+
+    expect(arr).toEqual([3, 2, 1]);
+  });
+
+  it("should swap two middle indexes", () => {
+    const arr = [1, 2, 3, 4];
+
+    arr.swap(1, 2);
+
+    expect(arr).toEqual([1, 3, 2, 4]);
+  });
+
+  it("should support negative indexes", () => {
+    const arr = [1, 2, 3, 4];
+
+    arr.swap(-1, 0);
+
+    expect(arr).toEqual([4, 2, 3, 1]);
+  });
+
+  it("should support two negative indexes", () => {
+    const arr = [1, 2, 3, 4];
+
+    arr.swap(-1, -3);
+
+    expect(arr).toEqual([1, 4, 3, 2]);
+  });
+
+  it("should do nothing when first index is out of range", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(10, 1);
+
+    expect(arr).toEqual([1, 2, 3]);
+  });
+
+  it("should do nothing when second index is out of range", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(1, -10);
+
+    expect(arr).toEqual([1, 2, 3]);
+  });
+
+  it("should do nothing when both indexes are out of range", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(10, -10);
+
+    expect(arr).toEqual([1, 2, 3]);
+  });
+
+  it("should do nothing when swapping same positive index", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(1, 1);
+
+    expect(arr).toEqual([1, 2, 3]);
+  });
+
+  it("should do nothing when swapping equivalent positive and negative indexes", () => {
+    const arr = [1, 2, 3];
+
+    arr.swap(0, -3);
+
+    expect(arr).toEqual([1, 2, 3]);
+  });
+
+  it("should return the same array instance", () => {
+    const arr = [1, 2, 3];
+
+    const result = arr.swap(0, 1);
+
+    expect(result).toBe(arr);
+  });
+
+  it("should work with string arrays", () => {
+    const arr = ["a", "b", "c"];
+
+    arr.swap(0, -1);
+
+    expect(arr).toEqual(["c", "b", "a"]);
+  });
+
+  it("should work with empty array", () => {
+    const arr: number[] = [];
+
+    arr.swap(0, -1);
+
+    expect(arr).toEqual([]);
+  });
+
+  it("should work with single element array", () => {
+    const arr = [1];
+
+    arr.swap(0, -1);
+
+    expect(arr).toEqual([1]);
+  });
+});
+
+describe("Array.prototype pattern methods", () => {
+  const values = ["apple pie", "banana split", "orange juice"];
+  const selector = (x: string) => x;
+
+  describe("hasAnyInAny", () => {
+    it("should return true when at least one pattern exists in at least one item", () => {
+      expect(values.hasAnyInAny(["apple", "zzz"], selector)).toBe(true);
+    });
+
+    it("should return true when regex matches one item", () => {
+      expect(values.hasAnyInAny([/^banana/i], selector)).toBe(true);
+    });
+
+    it("should return false when no pattern matches any item", () => {
+      expect(values.hasAnyInAny(["grape", "melon"], selector)).toBe(false);
+    });
+
+    it("should return false for empty patterns", () => {
+      expect(values.hasAnyInAny([], selector)).toBe(false);
+    });
+
+    it("should return false for empty array", () => {
+      expect([].hasAnyInAny(["apple"], selector)).toBe(false);
+    });
+  });
+
+  describe("hasAnyInAll", () => {
+    it("should return true when one pattern exists in every item", () => {
+      const arr = ["cat food", "cat toy", "cat bed"];
+      expect(arr.hasAnyInAll(["cat", "dog"], selector)).toBe(true);
+    });
+
+    it("should return true when regex exists in every item", () => {
+      const arr = ["abc1", "xyz1", "ttt1"];
+      expect(arr.hasAnyInAll([/\d/], selector)).toBe(true);
+    });
+
+    it("should return false when no single pattern exists in every item", () => {
+      expect(values.hasAnyInAll(["apple", "banana"], selector)).toBe(false);
+    });
+
+    it("should return false for empty patterns", () => {
+      expect(values.hasAnyInAll([], selector)).toBe(false);
+    });
+
+    it("should return true for empty array", () => {
+      expect([].hasAnyInAll(["apple"], selector)).toBe(true);
+    });
+  });
+
+  describe("hasAllInAny", () => {
+    it("should return true when all patterns are covered across items", () => {
+      expect(
+        values.hasAllInAny(["apple", "banana", "orange"], selector)
+      ).toBe(true);
+    });
+
+    it("should return true with mixed string and regex patterns", () => {
+      expect(
+        values.hasAllInAny(["apple", /^banana/i, /juice$/], selector)
+      ).toBe(true);
+    });
+
+    it("should return false when one pattern is missing", () => {
+      expect(
+        values.hasAllInAny(["apple", "banana", "grape"], selector)
+      ).toBe(false);
+    });
+
+    it("should return true for empty patterns", () => {
+      expect(values.hasAllInAny([], selector)).toBe(true);
+    });
+
+    it("should return false for empty array with non-empty patterns", () => {
+      expect([].hasAllInAny(["apple"], selector)).toBe(false);
+    });
+  });
+
+  describe("hasAllInAll", () => {
+    it("should return true when every pattern exists in every item", () => {
+      const arr = ["red big car", "red big bus", "red big bike"];
+
+      expect(arr.hasAllInAll(["red", "big"], selector)).toBe(true);
+    });
+
+    it("should return true with regex patterns", () => {
+      const arr = ["A1X", "B1Y", "C1Z"];
+
+      expect(arr.hasAllInAll([/\d/], selector)).toBe(true);
+    });
+
+    it("should return false when one pattern is missing from one item", () => {
+      const arr = ["red big car", "red car", "red big bike"];
+
+      expect(arr.hasAllInAll(["red", "big"], selector)).toBe(false);
+    });
+
+    it("should return true for empty patterns", () => {
+      expect(values.hasAllInAll([], selector)).toBe(true);
+    });
+
+    it("should return true for empty array", () => {
+      expect([].hasAllInAll(["apple"], selector)).toBe(true);
+    });
+  });
+});

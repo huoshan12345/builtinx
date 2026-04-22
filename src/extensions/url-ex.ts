@@ -85,7 +85,7 @@ function fromSegments(base: string | URL, ...segments: string[]): URL {
   const baseUrl = create(base.toString());
   const existing = baseUrl.pathname
     .split("/")
-    .filter(Boolean); // 需要过滤, 有时候会有重复的斜杠导致空的 segment
+    .filter(Boolean); // remove empty segments caused by consecutive slashes
 
   for (const segment of segments) {
     const trimmed = segment.trimChars(" /");
