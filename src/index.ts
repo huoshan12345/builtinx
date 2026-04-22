@@ -19,6 +19,7 @@ import '@/extensions/url';
 
 import "@/helpers";
 
+export * from "@/types/http-error";
 export * from "@/types/lib";
 
 export * from "@/utils/lazy";
