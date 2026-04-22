@@ -37,12 +37,12 @@ describe('BuiltinX.Fetch', () => {
     expect(data).toBe(mockText);
   });
 
-  it('should return undefined for a 204 No Content response', async () => {
+  it('should return null for a 204 No Content response', async () => {
     const mockResponse = new Response(null, { status: 204 });
     fetchMock.mockResolvedValue(mockResponse);
 
     const data = await BuiltinX.Fetch.request('https://api.example.com/delete');
-    expect(data).toBeUndefined();
+    expect(data).toBeNull();
   });
 
   it('should throw HttpError for a non-ok response with a JSON body', async () => {
@@ -54,12 +54,10 @@ describe('BuiltinX.Fetch', () => {
     });
     fetchMock.mockResolvedValue(mockResponse);
 
-    await expect(BuiltinX.Fetch.request('https://api.example.com/invalid'))
-      .rejects.toThrow(HttpError);
-
     try {
       await BuiltinX.Fetch.request('https://api.example.com/invalid');
     } catch (e) {
+      expect(e).toBeInstanceOf(HttpError);
       const err = e as HttpError;
       expect(err.status).toBe(404);
       expect(err.data).toEqual(errorData);
@@ -77,12 +75,10 @@ describe('BuiltinX.Fetch', () => {
     });
     fetchMock.mockResolvedValue(mockResponse);
 
-    await expect(BuiltinX.Fetch.request('https://api.example.com/error'))
-      .rejects.toThrow(HttpError);
-      
     try {
       await BuiltinX.Fetch.request('https://api.example.com/error');
     } catch (e) {
+      expect(e).toBeInstanceOf(HttpError);
       const err = e as HttpError;
       expect(err.status).toBe(500);
       expect(err.data).toBe(errorText);

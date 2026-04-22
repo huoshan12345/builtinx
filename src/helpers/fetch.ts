@@ -1,3 +1,5 @@
+import { Nullable } from '@/types/lib';
+
 /**
  * Represents an error that occurred during an HTTP request.
  */
@@ -28,35 +30,30 @@ export namespace Fetch {
    * @returns A promise that resolves with the parsed response data.
    * @template T The expected type of the response data.
    */
-  export async function request<T = unknown>(
-    input: string | URL | Request,
-    init?: RequestInit
-  ): Promise<T> {
+  export async function request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<T | null> {
     const res = await fetch(input, init);
 
     // Handle successful responses with no content.
     if (res.status === 204) {
-      return undefined as T;
+      return null;
     }
 
-    let data: unknown;
+    let data: unknown = null;
     const contentType = res.headers.get('content-type');
 
+    const raw = await res.text();
     if (contentType?.includes('application/json')) {
-      // Use a try-catch block in case the body is empty despite the header
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
+      data = raw
+        ? JSON.parse(raw)
+        : null;
     } else {
-      data = await res.text();
+      data = raw;
     }
 
     if (!res.ok) {
       throw new HttpError(`HTTP ${res.status}: ${res.statusText}`, res.status, data, res);
     }
 
-    return data as T;
+    return data as Nullable<T>;
   }
 }
