@@ -1,4 +1,4 @@
-import { Nullable, QueryParam, QueryParams } from '@/types/lib';
+import type { Nullable, QueryParam, QueryParams } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {

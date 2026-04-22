@@ -1,4 +1,4 @@
-import { Extractor, MatchPattern, Nullable, Nullishable } from '@/types/lib';
+import type { Extractor, MatchPattern, Nullable, Nullishable } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {

@@ -1,4 +1,4 @@
-export namespace Color {
+export const Color = {
   /**
    * Converts RGB color values to a hexadecimal string.
    * @param r The red value (0-255).
@@ -7,7 +7,7 @@ export namespace Color {
    * @param toUpperCase Whether to convert the resulting hex string to uppercase. Defaults to false.
    * @returns The hexadecimal color string (e.g., "#ff0000").
    */
-  export function rgbToHex(r: number, g: number, b: number, toUpperCase: boolean = false): string {
+  rgbToHex(r: number, g: number, b: number, toUpperCase: boolean = false): string {
     const hex = "#" + [r, g, b].map(toHex).join("");
     return toUpperCase ? hex.toUpperCase() : hex;
 
@@ -16,14 +16,14 @@ export namespace Color {
       const clamped = Math.max(0, Math.min(255, Math.trunc(c)));
       return clamped.toString(16).padStart(2, "0");
     }
-  }
+  },
 
   /**
    * Converts a HEX color string to an RGB object.
    * @param hex The hex color string (e.g., "#RRGGBB", "RRGGBB", "#RGB", "RGB").
    * @returns An object with r, g, b properties, or null if the hex string is invalid.
    */
-  export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     if (!hex || typeof hex !== 'string') {
       return null;
     }
@@ -41,5 +41,5 @@ export namespace Color {
         b: parseInt(result[3], 16),
       }
       : null;
-  }
+  },
 }

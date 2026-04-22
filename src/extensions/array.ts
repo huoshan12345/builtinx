@@ -1,4 +1,4 @@
-import { MatchPattern } from '@/types/lib';
+import type { MatchPattern } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {

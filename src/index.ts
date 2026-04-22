@@ -19,9 +19,9 @@ import '@/extensions/url';
 
 import "@/helpers";
 
-export * from "@/types/http-error";
 export * from "@/types/lib";
 
+export * from "@/utils/http-error";
 export * from "@/utils/lazy";
 export * from "@/utils/object";
 export * from "@/utils/queue";

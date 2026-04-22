@@ -1,4 +1,4 @@
-import { Awaitable, Nullable } from '@/types/lib';
+import type { Awaitable, Nullable } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 import { TimeSpan } from '@/utils/time-span';
 

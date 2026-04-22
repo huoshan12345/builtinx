@@ -1,18 +1,17 @@
-import { HttpError } from '@/types/http-error';
-import { Nullable, URLLike } from '@/types/lib';
+import { HttpError } from '@/utils/http-error';
+import type { Nullable, URLLike } from '@/types/lib';
 
-export namespace Http {
-  
+export const Http = {
   /**
    * Creates a Blob from a string and initiates a download.
    * @param text The text content to download.
    * @param filename The name of the file to be saved.
    * @param type The MIME type of the content. Defaults to 'plain/text'.
    */
-  export function downloadText(text: string, filename: string, type: string = 'plain/text') {
+  downloadText(text: string, filename: string, type: string = 'plain/text') {
     const blob = new Blob([text], { type: type });
     return blob.download(filename);
-  }
+  },
 
   /**
    * Fetches a resource from a URL and initiates a download for it.
@@ -20,9 +19,9 @@ export namespace Http {
    * @param filename The name of the file to be saved.
    * @returns A promise that resolves when the download is initiated.
    */
-  export function download(url: URLLike, filename: string) {
+  download(url: URLLike, filename: string) {
     return fetch(url).then(res => res.download(filename));
-  }
+  },
 
   /**
    * A wrapper around the global `fetch` function that provides improved JSON parsing and error handling.
@@ -33,7 +32,7 @@ export namespace Http {
    * @returns A promise that resolves with the parsed response data.
    * @template T The expected type of the response data.
    */
-  export async function request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<T | null> {
+  async request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<T | null> {
     const res = await fetch(input, init);
 
     // Handle successful responses with no content.
@@ -58,5 +57,5 @@ export namespace Http {
     }
 
     return data as Nullable<T>;
-  }
+  },
 }

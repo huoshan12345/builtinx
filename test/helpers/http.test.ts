@@ -1,4 +1,4 @@
-import { HttpError } from '@/types/http-error';
+import { HttpError } from '@/utils/http-error';
 
 // Mock the extension methods on Blob and Response prototypes
 const blobDownloadMock = vi.fn();

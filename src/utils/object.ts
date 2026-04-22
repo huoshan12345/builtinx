@@ -4,7 +4,10 @@ export function definePropertyIfAbsent<
 >(
   target: T,
   key: K,
-  value: unknown
+  value: unknown,
+  writable = true,
+  configurable = true,
+  enumerable = false
 ): boolean {
   if (Object.prototype.hasOwnProperty.call(target, key)) {
     return false;
@@ -12,9 +15,9 @@ export function definePropertyIfAbsent<
 
   Object.defineProperty(target, key, {
     value,
-    writable: true,
-    configurable: true,
-    enumerable: false
+    writable,
+    configurable,
+    enumerable
   });
 
   return true;

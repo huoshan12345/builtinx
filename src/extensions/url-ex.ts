@@ -1,4 +1,4 @@
-import { URLLike } from '@/types/lib';
+import type { URLLike } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {

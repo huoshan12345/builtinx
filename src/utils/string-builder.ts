@@ -1,4 +1,4 @@
-import { Nullishable } from '@/types/lib';
+import type { Nullishable } from '@/types/lib';
 
 export class StringBuilder {
   private strings: string[] = [];

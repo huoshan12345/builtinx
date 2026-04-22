@@ -1,4 +1,4 @@
-import { Nullishable } from '@/types/lib';
+import type { Nullishable } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
