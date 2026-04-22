@@ -1,4 +1,4 @@
-import { Extractor, Nullable, Nullishable } from '@/types/lib';
+import { Extractor, MatchPattern, Nullable, Nullishable } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/utils/object';
 
 declare global {
@@ -35,6 +35,17 @@ declare global {
      * @returns The first extracted value, or null if no match is found.
      */
     extract<T>(this: Extractor<T>[], input: Nullishable<string>): Nullable<T>;
+
+    /**
+     * Determines whether the input string matches any pattern in the current array.
+     *
+     * Each pattern may be a string or a regular expression.
+     * Returns true as soon as the first matching pattern is found.
+     *
+     * @param input The source string to test.
+     * @returns True if any pattern matches the input; otherwise false.
+     */
+    matchesAny(this: MatchPattern[], input: string): boolean;
   }
 
   interface RegExpExecArray {
@@ -101,6 +112,11 @@ function extract<T>(this: Extractor<T>[], input: Nullishable<string>): Nullable<
   return null;
 };
 
+function matchesAny(this: MatchPattern[], input: string) {
+  return input.hasAny(this);
+}
+
 definePropertyIfAbsent(Array.prototype, 'rewrite', rewrite);
 definePropertyIfAbsent(Array.prototype, 'replaceMatch', replaceMatch);
 definePropertyIfAbsent(Array.prototype, 'extract', extract);
+definePropertyIfAbsent(Array.prototype, 'matchesAny', matchesAny);

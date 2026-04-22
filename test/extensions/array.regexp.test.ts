@@ -124,3 +124,45 @@ describe("Array.prototype.extract", () => {
     expect(([] as Extractor<string>[]).extract("value")).toBeNull();
   });
 });
+
+describe("Array.prototype.matchesAny", () => {
+  it("should return true when a string pattern matches", () => {
+    expect(["cat", "dog"].matchesAny("my dog is here")).toBe(true);
+  });
+
+  it("should return true when a RegExp pattern matches", () => {
+    expect([/dog/i, /cat/i].matchesAny("My DOG is here")).toBe(true);
+  });
+
+  it("should return true when later pattern matches", () => {
+    expect(["zzz", "apple"].matchesAny("green apple")).toBe(true);
+  });
+
+  it("should return false when no pattern matches", () => {
+    expect(["cat", /dog/].matchesAny("bird")).toBe(false);
+  });
+
+  it("should return false for empty pattern array", () => {
+    expect([].matchesAny("anything")).toBe(false);
+  });
+
+  it("should return true for exact string match", () => {
+    expect(["hello"].matchesAny("hello")).toBe(true);
+  });
+
+  it("should return false for empty input when nothing matches", () => {
+    expect(["abc", /def/].matchesAny("")).toBe(false);
+  });
+
+  it("should return true when empty string pattern is included", () => {
+    expect([""].matchesAny("text")).toBe(true);
+  });
+
+  it("should return true when RegExp matches empty input", () => {
+    expect([/^$/].matchesAny("")).toBe(true);
+  });
+
+  it("should support mixed string and RegExp patterns", () => {
+    expect(["cat", /\d+/].matchesAny("item 123")).toBe(true);
+  });
+});
