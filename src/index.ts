@@ -20,9 +20,14 @@ import '@/extensions/url';
 import "@/helpers";
 
 export * from "@/types/lib";
-export * from "@/utils/object";
-export * from "@/utils/time-span";
+
 export * from "@/utils/lazy";
+export * from "@/utils/object";
+export * from "@/utils/queue";
+export * from "@/utils/stack";
 export * from "@/utils/string-builder";
+export * from "@/utils/time-span";
+export * from "@/utils/timer";
+
 
 
