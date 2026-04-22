@@ -72,14 +72,14 @@ describe("Array.prototype.rewrite", () => {
   });
 });
 
-describe("Array.prototype.extractFirst", () => {
+describe("Array.prototype.extract", () => {
   it("returns the transformed value from the first matching extractor", () => {
     const extractors: Extractor<number>[] = [
       [/\d+/, match => Number(match[0])],
       [/cat/, () => 0],
     ];
 
-    expect(extractors.extractFirst("id=42")).toBe(42);
+    expect(extractors.extract("id=42")).toBe(42);
   });
 
   it("checks extractors in order", () => {
@@ -90,7 +90,7 @@ describe("Array.prototype.extractFirst", () => {
       [/value/, second],
     ];
 
-    expect(extractors.extractFirst("value")).toBe("first");
+    expect(extractors.extract("value")).toBe("first");
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).not.toHaveBeenCalled();
   });
@@ -100,7 +100,7 @@ describe("Array.prototype.extractFirst", () => {
       [/cat/, () => "cat"],
     ];
 
-    expect(extractors.extractFirst("dog")).toBeNull();
+    expect(extractors.extract("dog")).toBeNull();
   });
 
   it("returns null for nullish input", () => {
@@ -108,8 +108,8 @@ describe("Array.prototype.extractFirst", () => {
       [/.*/, () => "value"],
     ];
 
-    expect(extractors.extractFirst(null)).toBeNull();
-    expect(extractors.extractFirst(undefined)).toBeNull();
+    expect(extractors.extract(null)).toBeNull();
+    expect(extractors.extract(undefined)).toBeNull();
   });
 
   it("returns null for empty string input", () => {
@@ -117,10 +117,10 @@ describe("Array.prototype.extractFirst", () => {
       [/.*/, () => "value"],
     ];
 
-    expect(extractors.extractFirst("")).toBeNull();
+    expect(extractors.extract("")).toBeNull();
   });
 
   it("returns null for an empty extractor array", () => {
-    expect(([] as Extractor<string>[]).extractFirst("value")).toBeNull();
+    expect(([] as Extractor<string>[]).extract("value")).toBeNull();
   });
 });
