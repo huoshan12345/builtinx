@@ -9,7 +9,9 @@ export function definePropertyIfAbsent<
   configurable = true,
   enumerable = false
 ): boolean {
-  if (Object.prototype.hasOwnProperty.call(target, key)) {
+  if (target == null
+    || key == null
+    || Object.prototype.hasOwnProperty.call(target, key)) {
     return false;
   }
 
