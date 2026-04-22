@@ -192,6 +192,29 @@ describe("Array.prototype.removeAt", () => {
   });
 });
 
+describe("Array.prototype.remove", () => {
+  it("removes the first occurrence of the specified item", () => {
+    const arr = ["a", "b", "c", "b"];
+
+    expect(arr.remove("b")).toBe(true);
+    expect(arr).toEqual(["a", "c", "b"]);
+  });
+
+  it("returns false if the item is not found", () => {
+    const arr = ["a", "b", "c"];
+
+    expect(arr.remove("x")).toBe(false);
+    expect(arr).toEqual(["a", "b", "c"]);
+  });
+
+  it("works with single-element arrays", () => {
+    const arr = ["x"];
+
+    expect(arr.remove("x")).toBe(true);
+    expect(arr).toEqual([]);
+  });
+});
+
 describe("Array.prototype.throwIfEmpty", () => {
   it("does not throw for non-empty arrays", () => {
     expect(() => [1].throwIfEmpty()).not.toThrow();
@@ -225,7 +248,7 @@ describe("Array.prototype.throwIfEmpty", () => {
     expect(() => [false].throwIfEmpty()).not.toThrow();
     expect(() => [null].throwIfEmpty()).not.toThrow();
     expect(() => [undefined].throwIfEmpty()).not.toThrow();
-    expect(() => [""] .throwIfEmpty()).not.toThrow();
+    expect(() => [""].throwIfEmpty()).not.toThrow();
   });
 
   it("throws after all elements are removed", () => {

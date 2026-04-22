@@ -26,6 +26,13 @@ declare global {
     removeAt(index: number): T | undefined;
 
     /**
+     * Removes the first occurrence of the specified item from the array.
+     *
+     * Returns true if an element was removed, or false if the item was not found.
+     */
+    remove(item: T): boolean;
+
+    /**
      * Throws an error if the array is empty.
      *
      * This method is useful when an operation requires at least one element.
@@ -213,6 +220,16 @@ function removeAt<T>(this: T[], index: number): T | undefined {
   return this.splice(index, 1)[0];
 }
 
+function remove<T>(this: T[], item: T): boolean {
+  const index = this.indexOf(item);
+  if (index === -1) {
+    return false;
+  }
+
+  this.removeAt(index);
+  return true;
+};
+
 function throwIfEmpty<T>(this: T[]): T[] {
   if (this.length === 0) {
     throw new RangeError("The array is empty.");
@@ -379,3 +396,4 @@ definePropertyIfAbsent(Array.prototype, 'containsAnyInAny', containsAnyInAny);
 definePropertyIfAbsent(Array.prototype, 'containsAnyInAll', containsAnyInAll);
 definePropertyIfAbsent(Array.prototype, 'containsAllInAny', containsAllInAny);
 definePropertyIfAbsent(Array.prototype, 'containsAllInAll', containsAllInAll);
+definePropertyIfAbsent(Array.prototype, 'remove', remove);

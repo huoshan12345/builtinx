@@ -4,4 +4,8 @@ export class Lazy<T> {
   public get value(): T {
     return (this.#value ??= this.valueFactory());
   }
+
+  public get isValueCreated(): boolean {
+    return this.#value !== undefined;
+  }
 }
