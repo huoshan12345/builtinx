@@ -125,44 +125,44 @@ describe("Array.prototype.extract", () => {
   });
 });
 
-describe("Array.prototype.matchesAny", () => {
+describe("Array.prototype.containsAny", () => {
   it("should return true when a string pattern matches", () => {
-    expect(["cat", "dog"].matchesAny("my dog is here")).toBe(true);
+    expect(["cat", "dog"].containsAny("my dog is here")).toBe(true);
   });
 
   it("should return true when a RegExp pattern matches", () => {
-    expect([/dog/i, /cat/i].matchesAny("My DOG is here")).toBe(true);
+    expect([/dog/i, /cat/i].containsAny("My DOG is here")).toBe(true);
   });
 
   it("should return true when later pattern matches", () => {
-    expect(["zzz", "apple"].matchesAny("green apple")).toBe(true);
+    expect(["zzz", "apple"].containsAny("green apple")).toBe(true);
   });
 
   it("should return false when no pattern matches", () => {
-    expect(["cat", /dog/].matchesAny("bird")).toBe(false);
+    expect(["cat", /dog/].containsAny("bird")).toBe(false);
   });
 
   it("should return false for empty pattern array", () => {
-    expect([].matchesAny("anything")).toBe(false);
+    expect([].containsAny("anything")).toBe(false);
   });
 
   it("should return true for exact string match", () => {
-    expect(["hello"].matchesAny("hello")).toBe(true);
+    expect(["hello"].containsAny("hello")).toBe(true);
   });
 
   it("should return false for empty input when nothing matches", () => {
-    expect(["abc", /def/].matchesAny("")).toBe(false);
+    expect(["abc", /def/].containsAny("")).toBe(false);
   });
 
   it("should return true when empty string pattern is included", () => {
-    expect([""].matchesAny("text")).toBe(true);
+    expect([""].containsAny("text")).toBe(true);
   });
 
   it("should return true when RegExp matches empty input", () => {
-    expect([/^$/].matchesAny("")).toBe(true);
+    expect([/^$/].containsAny("")).toBe(true);
   });
 
   it("should support mixed string and RegExp patterns", () => {
-    expect(["cat", /\d+/].matchesAny("item 123")).toBe(true);
+    expect(["cat", /\d+/].containsAny("item 123")).toBe(true);
   });
 });

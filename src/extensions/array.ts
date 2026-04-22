@@ -341,22 +341,22 @@ function swap<T>(this: T[], i: number, j: number): T[] {
 
 function hasAnyInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.some(x => x.has(m)));
+  return patterns.some(m => values.some(x => x.contains(m)));
 };
 
 function hasAnyInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.every(x => x.has(m)));
+  return patterns.some(m => values.every(x => x.contains(m)));
 };
 
 function hasAllInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.some(x => x.has(m)));
+  return patterns.every(m => values.some(x => x.contains(m)));
 };
 
 function hasAllInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.every(x => x.has(m)));
+  return patterns.every(m => values.every(x => x.contains(m)));
 };
 
 definePropertyIfAbsent(Array, 'cast', cast);

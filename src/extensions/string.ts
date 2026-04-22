@@ -9,14 +9,7 @@ declare global {
      * When `pattern` is a string, this method uses substring search semantics.
      * When `pattern` is a regular expression, this method returns true when any match exists.
      */
-    has(pattern: MatchPattern): boolean;
-
-    /**
-     * Returns whether the string contains or matches any of the specified patterns.
-     *
-     * Returns false when `patterns` is empty.
-     */
-    hasAny(patterns: MatchPattern[]): boolean;
+    contains(pattern: MatchPattern): boolean;
 
     /**
      * Returns whether the string matches the specified value or pattern.
@@ -96,16 +89,12 @@ declare global {
   }
 }
 
-function has(this: string, pattern: MatchPattern) {
+function contains(this: string, pattern: MatchPattern) {
   if (typeof pattern === 'string') {
     return this.includes(pattern);
   } else {
     return !!pattern.find(this);
   }
-};
-
-function hasAny(this: string, patterns: MatchPattern[]) {
-  return patterns.some(m => has.call(this, m));
 };
 
 function matches(this: string, pattern: MatchPattern) {
@@ -231,8 +220,7 @@ function trimChars(this: string, chars: string): string {
     : codePoints.slice(start, end + 1).join("");
 };
 
-definePropertyIfAbsent(String.prototype, 'has', has);
-definePropertyIfAbsent(String.prototype, 'hasAny', hasAny);
+definePropertyIfAbsent(String.prototype, 'contains', contains);
 definePropertyIfAbsent(String.prototype, 'matches', matches);
 definePropertyIfAbsent(String.prototype, 'skipUntil', skipUntil);
 definePropertyIfAbsent(String.prototype, 'takeUntil', takeUntil);

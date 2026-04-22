@@ -1,48 +1,30 @@
-describe("String.prototype.has", () => {
+describe("String.prototype.contains", () => {
   it("returns true when substring exists", () => {
-    expect("hello world".has("world")).toBe(true);
+    expect("hello world".contains("world")).toBe(true);
   });
 
   it("returns false when substring does not exist", () => {
-    expect("hello world".has("mars")).toBe(false);
+    expect("hello world".contains("mars")).toBe(false);
   });
 
   it("returns true for empty string pattern", () => {
-    expect("hello".has("")).toBe(true);
+    expect("hello".contains("")).toBe(true);
   });
 
   it("returns true when regular expression matches", () => {
-    expect("hello world".has(/wo.ld/)).toBe(true);
+    expect("hello world".contains(/wo.ld/)).toBe(true);
   });
 
   it("returns false when regular expression does not match", () => {
-    expect("hello world".has(/mars/)).toBe(false);
+    expect("hello world".contains(/mars/)).toBe(false);
   });
 
   it("resets lastIndex when regular expression is global", () => {
     const regex = /wo.ld/g;
     regex.lastIndex = 999;
 
-    expect("hello world".has(regex)).toBe(true);
+    expect("hello world".contains(regex)).toBe(true);
     expect(regex.lastIndex).toBe(0);
-  });
-});
-
-describe("String.prototype.hasAny", () => {
-  it("returns true when any string pattern matches", () => {
-    expect("hello world".hasAny(["mars", "world"])).toBe(true);
-  });
-
-  it("returns true when any regular expression matches", () => {
-    expect("hello world".hasAny([/mars/, /wo.ld/])).toBe(true);
-  });
-
-  it("returns false when no pattern matches", () => {
-    expect("hello world".hasAny(["mars", /venus/])).toBe(false);
-  });
-
-  it("returns false for empty pattern list", () => {
-    expect("hello world".hasAny([])).toBe(false);
   });
 });
 

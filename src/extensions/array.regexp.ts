@@ -46,6 +46,17 @@ declare global {
      * @returns True if any pattern matches the input; otherwise false.
      */
     matchesAny(this: MatchPattern[], input: string): boolean;
+
+    /**
+     * Determines whether the input string contains any pattern in the current array.
+     *
+     * Each pattern may be a string or a regular expression.
+     * Returns true as soon as the first matching pattern is found within the input.
+     *
+     * @param input The source string to test.
+     * @returns True if any pattern is contained in the input; otherwise false.
+     */
+    containsAny(this: MatchPattern[], input: string): boolean;
   }
 
   interface RegExpExecArray {
@@ -113,10 +124,15 @@ function extract<T>(this: Extractor<T>[], input: Nullishable<string>): Nullable<
 };
 
 function matchesAny(this: MatchPattern[], input: string) {
-  return input.hasAny(this);
+  return this.some(m => input.matches(m));
+}
+
+function containsAny(this: MatchPattern[], input: string) {
+  return this.some(m => input.contains(m));
 }
 
 definePropertyIfAbsent(Array.prototype, 'rewrite', rewrite);
 definePropertyIfAbsent(Array.prototype, 'replaceMatch', replaceMatch);
 definePropertyIfAbsent(Array.prototype, 'extract', extract);
 definePropertyIfAbsent(Array.prototype, 'matchesAny', matchesAny);
+definePropertyIfAbsent(Array.prototype, 'containsAny', containsAny);
