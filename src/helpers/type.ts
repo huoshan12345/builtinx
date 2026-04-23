@@ -7,7 +7,7 @@ const is = {
   nil: (v: unknown): v is null | undefined => v === null || v === undefined,
 };
 
-export const Type = {
+export interface Type {
   /**
    * Returns the precise type of a value with a hybrid casing strategy.
    * * - **Lowercase**: For standard `typeof` results (string, number, boolean, etc.) 
@@ -21,7 +21,16 @@ export const Type = {
    * Type.get({})         // "object"
    * * @param val - The value to inspect.
    * @returns A string representing the precise type.
-   */  
+   */
+  get(val: unknown): string;
+
+  /** 
+   * A collection of type guard functions for common types.
+   */
+  is: typeof is;
+}
+
+export const Type: Type = {
   get(val: unknown): string {
     // Special handling for null (since typeof null === 'object')
     if (val === null)

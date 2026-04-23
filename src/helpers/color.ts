@@ -1,4 +1,4 @@
-export const Color = {
+export interface Color {
   /**
    * Converts RGB color values to a hexadecimal string.
    * @param r The red value (0-255).
@@ -7,6 +7,17 @@ export const Color = {
    * @param toUpperCase Whether to convert the resulting hex string to uppercase. Defaults to false.
    * @returns The hexadecimal color string (e.g., "#ff0000").
    */
+  rgbToHex(r: number, g: number, b: number, toUpperCase?: boolean): string;
+
+  /**
+   * Converts a HEX color string to an RGB object.
+   * @param hex The hex color string (e.g., "#RRGGBB", "RRGGBB", "#RGB", "RGB").
+   * @returns An object with r, g, b properties, or null if the hex string is invalid.
+   */
+  hexToRgb(hex: string): { r: number; g: number; b: number } | null;
+}
+
+export const Color: Color = {
   rgbToHex(r: number, g: number, b: number, toUpperCase: boolean = false): string {
     const hex = "#" + [r, g, b].map(toHex).join("");
     return toUpperCase ? hex.toUpperCase() : hex;
@@ -17,12 +28,7 @@ export const Color = {
       return clamped.toString(16).padStart(2, "0");
     }
   },
-
-  /**
-   * Converts a HEX color string to an RGB object.
-   * @param hex The hex color string (e.g., "#RRGGBB", "RRGGBB", "#RGB", "RGB").
-   * @returns An object with r, g, b properties, or null if the hex string is invalid.
-   */
+  
   hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     if (!hex || typeof hex !== 'string') {
       return null;

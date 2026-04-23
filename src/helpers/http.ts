@@ -1,17 +1,14 @@
 import { HttpError } from '@/utils/http-error';
 import type { Nullable, URLLike } from '@/types/lib';
 
-export const Http = {
+export interface Http {
   /**
    * Creates a Blob from a string and initiates a download.
    * @param text The text content to download.
    * @param filename The name of the file to be saved.
    * @param type The MIME type of the content. Defaults to 'plain/text'.
    */
-  downloadText(text: string, filename: string, type: string = 'plain/text') {
-    const blob = new Blob([text], { type: type });
-    return blob.download(filename);
-  },
+  downloadText(text: string, filename: string, type?: string): void;
 
   /**
    * Fetches a resource from a URL and initiates a download for it.
@@ -19,9 +16,7 @@ export const Http = {
    * @param filename The name of the file to be saved.
    * @returns A promise that resolves when the download is initiated.
    */
-  download(url: URLLike, filename: string) {
-    return fetch(url).then(res => res.download(filename));
-  },
+  download(url: URLLike, filename: string): Promise<void>;
 
   /**
    * A wrapper around the global `fetch` function that provides improved JSON parsing and error handling.
@@ -32,7 +27,21 @@ export const Http = {
    * @returns A promise that resolves with the parsed response data.
    * @template T The expected type of the response data.
    */
-  async request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<T | null> {
+  request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<Nullable<T>>;
+}
+
+export const Http: Http = {
+  downloadText(text: string, filename: string, type: string = 'plain/text'): Promise<void> {
+    const blob = new Blob([text], { type: type });
+    return blob.download(filename);
+  },
+
+  async download(url: URLLike, filename: string): Promise<void> {
+    const res = await fetch(url);
+    return await res.download(filename);
+  },
+
+  async request<T = unknown>(input: string | URL | Request, init?: RequestInit): Promise<Nullable<T>> {
     const res = await fetch(input, init);
 
     // Handle successful responses with no content.
