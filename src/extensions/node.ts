@@ -1,5 +1,5 @@
 import { definePropertyIfAbsent } from '@/helpers/utils';
-import { MutationObserverOptions, type NodeMutationCallback, type NodeMutationCallbackParams } from '..';
+import { DebounceMutationCallbackOptions, MutationObserverOptions, type NodeMutationCallback } from '@/types/mutation-observer';
 
 declare global {
   interface Node {
@@ -54,15 +54,25 @@ function isTextNode(this: Node): boolean {
 function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
   const opts = new MutationObserverOptions(options);
   const node = this;
-  let observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback((records, observer) => callback(records, observer, node), {
-    debug: opts.debug,
+
+  const debounceOptions = {
     debounceMs: opts.debounceMs,
     immediate: opts.immediate,
     exclusions: opts.resolvedExclusions,
-  }));
+    beforeCallback: (records, observer) => opts.beforeCallback?.(records, observer, node),
+    afterCallback: (records, observer) => opts.afterCallback?.(records, observer, node),
+    onSkipped: (records, observer) => opts.onSkipped?.(records, observer, node),
+  } as Partial<DebounceMutationCallbackOptions>;
+
+  const observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback(
+    (records, observer) => callback(records, observer, node),
+    debounceOptions),
+  );
 
   if (opts.callAtOnce) {
+    opts.beforeCallback?.([], observer, node);
     callback([], observer, node);
+    opts.afterCallback?.([], observer, node);
   }
 
   observer.observe(node, opts.toNativeInit());

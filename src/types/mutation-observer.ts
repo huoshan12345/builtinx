@@ -36,8 +36,6 @@ export type NodeMutationCallbackParams = Parameters<NodeMutationCallback>;
  * Includes additional properties for debouncing and mutation exclusion logic.
  */
 export class DebounceMutationCallbackOptions {
-  /** If true, logs detailed information about mutations and exclusions to the console. */
-  debug: boolean = false;
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
   /** If true, triggers the callback on the leading edge of the debounce. */
@@ -46,6 +44,13 @@ export class DebounceMutationCallbackOptions {
   callAtOnce: boolean = false;
   /** List of predicates to determine which mutations should be excluded (ignored). */
   exclusions: Predicate<MutationRecord>[] = [];
+
+  /** Optional callback to be executed before the main callback. */
+  beforeCallback?: MutationCallback;
+  /** Optional callback to be executed after the main callback. */
+  afterCallback?: MutationCallback;
+  /** Optional function that will be called when the callback is skipped. */
+  onSkipped?: MutationCallback;
 
   constructor(options: Partial<DebounceMutationCallbackOptions>) {
     Object.assign(this, options);
@@ -67,31 +72,25 @@ export class MutationObserverOptions implements MutationObserverInit {
   subtree: boolean = true;
 
   // --- Extended Properties ---
-  /** 
-   * Debounce interval in milliseconds. 
-   */
+
+  /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
-
-  /**
-   * If true, triggers the callback on the leading edge of the debounce.
-   */
+  /** If true, triggers the callback on the leading edge of the debounce. */
   immediate: boolean = true;
-
-  /**
-   * If true, executes the callback once immediately after observation starts.
-   */
+  /** If true, executes the callback once immediately after observation starts. */
   callAtOnce: boolean = true;
-
-  /** 
-   * If true, logs detailed information about mutations and exclusions to the console.
-   */
-  debug: boolean = false;
+  /** If true, logs detailed information about mutations and exclusions to the console. */
+  log: boolean = false;
+  /** Optional callback to be executed before the main callback. */
+  beforeCallback?: NodeMutationCallback;
+  /** Optional callback to be executed after the main callback. */
+  afterCallback?: NodeMutationCallback;
+  /** Optional function that will be called when the callback is skipped. */
+  onSkipped?: NodeMutationCallback;
 
   private _exclusions: MutationExclusion[] = [];
 
-  /**
-   * Get the current list of mutation exclusion predicates.
-   */
+  /** Get the current list of mutation exclusion predicates. */
   public get exclusions(): MutationExclusionsInput {
     return this._exclusions;
   }
@@ -108,9 +107,7 @@ export class MutationObserverOptions implements MutationObserverInit {
     }
   }
 
-  /** 
-   * Returns the resolved list of exclusion predicates.
-   */
+  /** Returns the resolved list of exclusion predicates. */
   public get resolvedExclusions(): MutationExclusion[] {
     return this._exclusions;
   }
@@ -128,14 +125,14 @@ export class MutationObserverOptions implements MutationObserverInit {
     };
   }
 
+
+
   constructor(init?: Partial<MutationObserverOptions>) {
     // Priority: Instance defaults < Global defaults < Constructor arguments
     Object.assign(this, MutationObserverOptions._default, init);
   }
 
-  /**
-   * Extracts standard MutationObserverInit properties only.
-   */
+  /** Extracts standard MutationObserverInit properties only. */
   public toNativeInit(): MutationObserverInit {
     return {
       attributeFilter: this.attributeFilter,

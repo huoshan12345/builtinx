@@ -11,19 +11,15 @@ import { DebounceOptions, type DebounceCallback } from '@/types/utils';
 export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>, options: Partial<DebounceOptions<TArgs>>): DebounceCallback<TArgs> {
   const opts = new DebounceOptions(options);
   let timer: Nullable<ReturnType<typeof setTimeout>> = null;
-
   const cb = (...args: TArgs) => {
-    if (opts.debug) {
-      console.debug('Debounce callback executed.', ...args);
-    }
+    opts.beforeCallback?.(...args);
     callback(...args);
+    opts.afterCallback?.(...args);
   };
 
-  return function (...args: TArgs) {
+  return function (...args: TArgs) {    
     if (opts.shouldSkip?.(...args) === true) {
-      if (opts.debug) {
-        console.debug('Debounce skipped.', ...args);
-      }
+      opts.onSkipped?.(...args);
       return;
     }
 

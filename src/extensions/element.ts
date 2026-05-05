@@ -89,7 +89,6 @@ function getDocumentRect(this: Element): DOMRectReadOnly {
   );
 };
 
-
 definePropertyIfAbsent(Element.prototype, "hide", hide);
 definePropertyIfAbsent(Element.prototype, "show", show);
 definePropertyIfAbsent(Element.prototype, "collapseBrs", collapseBrs);
