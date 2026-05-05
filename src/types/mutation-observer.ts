@@ -40,8 +40,6 @@ export class DebounceMutationCallbackOptions {
   debounceMs: number = 1000;
   /** If true, triggers the callback on the leading edge of the debounce. */
   immediate: boolean = false;
-  /** If true, executes the callback once immediately after observation starts. */
-  callAtOnce: boolean = false;
   /** List of predicates to determine which mutations should be excluded (ignored). */
   exclusions: Predicate<MutationRecord>[] = [];
 
@@ -122,8 +120,6 @@ export class MutationObserverOptions implements MutationObserverInit {
       ...value
     };
   }
-
-
 
   constructor(init?: Partial<MutationObserverOptions>) {
     // Priority: Instance defaults < Global defaults < Constructor arguments

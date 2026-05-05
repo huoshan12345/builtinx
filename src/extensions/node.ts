@@ -59,13 +59,13 @@ function observe(this: Node, callback: NodeMutationCallback, options?: Partial<M
     debounceMs: opts.debounceMs,
     immediate: opts.immediate,
     exclusions: opts.resolvedExclusions,
-    beforeCallback: (records, observer) => opts.beforeCallback?.(records, observer, node),
-    afterCallback: (records, observer) => opts.afterCallback?.(records, observer, node),
-    onSkipped: (records, observer) => opts.onSkipped?.(records, observer, node),
+    beforeCallback: (records, obs) => opts.beforeCallback?.(records, obs, node),
+    afterCallback: (records, obs) => opts.afterCallback?.(records, obs, node),
+    onSkipped: (records, obs) => opts.onSkipped?.(records, obs, node),
   } as Partial<DebounceMutationCallbackOptions>;
 
   const observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback(
-    (records, observer) => callback(records, observer, node),
+    (records, obs) => callback(records, obs, node),
     debounceOptions),
   );
 

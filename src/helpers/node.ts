@@ -19,9 +19,9 @@ export const Node: Node = {
       onSkipped: opts.onSkipped,
       debounceMs: opts.debounceMs,
       immediate: opts.immediate,
-      shouldSkip: m => {
-        const filtered = m.filter(m => !opts.exclusions.some(x => x(m)));
-        m.replaceFrom(filtered); // Update the original array with the filtered records
+      shouldSkip: records => {
+        const filtered = records.filter(m => !opts.exclusions.some(x => x(m)));
+        records.replaceFrom(filtered); // Update the original array with the filtered records
         return filtered.length === 0;
       },
     });

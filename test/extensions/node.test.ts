@@ -1,3 +1,5 @@
+import type { Mock } from 'vitest';
+
 describe("Node extensions", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -115,4 +117,197 @@ describe("Node extensions", () => {
       expect(node.isNewLineTextNode()).toBe(true);
     });
   });
+});
+
+describe('Node.prototype.observe', () => {
+
+  let callback: Mock;
+  let node: Node;
+
+  let observeMock: Mock;
+  let disconnectMock: Mock;
+  let trigger: (records: MutationRecord[]) => void;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+
+    callback = vi.fn();
+    node = document.createTextNode("hello");
+
+    observeMock = vi.fn();
+    disconnectMock = vi.fn();
+
+    // mock MutationObserver
+    (global as any).MutationObserver = vi.fn(function (cb: MutationCallback) {
+      trigger = (records: MutationRecord[]) => {
+        cb(records, this);
+      };
+
+      return {
+        observe: observeMock,
+        disconnect: disconnectMock
+      };
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  function createMutation(type: MutationRecordType): MutationRecord {
+    return { type } as MutationRecord;
+  }
+
+  test('should observe with correct native options', () => {
+    node.observe(callback, {
+      attributes: true
+    });
+
+    expect(observeMock).toHaveBeenCalledWith(node, expect.objectContaining({
+      attributes: true,
+      childList: true,
+      subtree: true
+    }));
+  });
+
+  test('should call callback with node parameter', () => {
+    node.observe(callback);
+
+    const records = [createMutation('attributes')];
+
+    trigger(records);
+    vi.advanceTimersByTime(1000);
+
+    expect(callback).toHaveBeenCalledWith(records, expect.anything(), node);
+  });
+
+  test('should execute callAtOnce immediately', () => {
+    node.observe(callback, {
+      callAtOnce: true
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith([], expect.anything(), node);
+  });
+
+  test('should call beforeCallback and afterCallback (callAtOnce)', () => {
+    const before = vi.fn();
+    const after = vi.fn();
+
+    node.observe(callback, {
+      callAtOnce: true,
+      beforeCallback: before,
+      afterCallback: after
+    });
+
+    expect(before).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(after).toHaveBeenCalledTimes(1);
+
+    expect(before.mock.invocationCallOrder[0])
+      .toBeLessThan(callback.mock.invocationCallOrder[0]);
+
+    expect(callback.mock.invocationCallOrder[0])
+      .toBeLessThan(after.mock.invocationCallOrder[0]);
+  });
+
+  test('should debounce callback (default trailing)', () => {
+    node.observe(callback, {
+      debounceMs: 100,
+      immediate: false,
+      callAtOnce: false,
+    });
+
+    trigger([createMutation('attributes')]);
+    trigger([createMutation('childList')]);
+
+    expect(callback).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(100);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  test('should execute immediately when immediate=true', () => {
+    node.observe(callback, {
+      immediate: true,
+      callAtOnce: false,
+    });
+
+    trigger([createMutation('attributes')]);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  test('should filter mutations using exclusions', () => {
+    node.observe(callback, {
+      callAtOnce: false,
+      exclusions: [
+        m => m.type === 'attributes'
+      ]
+    });
+
+    const records = [
+      createMutation('attributes'),
+      createMutation('childList')
+    ];
+
+    trigger(records);
+    vi.advanceTimersByTime(1000);
+
+    const result = callback.mock.calls[0][0];
+
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('childList');
+  });
+
+  test('should skip callback when all mutations excluded', () => {
+    const onSkipped = vi.fn();
+
+    node.observe(callback, {
+      callAtOnce: false,
+      exclusions: [() => true],
+      onSkipped
+    });
+
+    trigger([createMutation('attributes')]);
+    vi.advanceTimersByTime(1000);
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(onSkipped).toHaveBeenCalledTimes(1);
+  });
+
+  test('should call beforeCallback and afterCallback during debounce execution', () => {
+    const before = vi.fn();
+    const after = vi.fn();
+
+    node.observe(callback, {
+      callAtOnce: false,
+      beforeCallback: before,
+      afterCallback: after
+    });
+
+    trigger([createMutation('attributes')]);
+    vi.advanceTimersByTime(1000);
+
+    expect(before).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  test('should pass observer instance correctly', () => {
+    node.observe(callback);
+
+    const records = [createMutation('attributes')];
+
+    trigger(records);
+    vi.advanceTimersByTime(1000);
+
+    const observerInstance = callback.mock.calls[0][1];
+
+    expect(observerInstance).toBeDefined();
+  });
+
 });
