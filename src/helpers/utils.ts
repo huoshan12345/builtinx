@@ -1,45 +1,51 @@
-import type { Nullable, Predicate } from '@/types/lib';
+import type { Nullable } from '@/types/lib';
+import { DebounceOptions, type DebounceCallback } from '@/types/utils';
 
 /**
  * Creates a debounced function that delays invoking the provided callback until after a specified wait time has elapsed since the last time the debounced function was invoked.   
  * Optionally, the callback can be invoked immediately on the leading edge of the timeout instead of the trailing edge.
  * @param callback The function to debounce.
- * @param delayMs The number of milliseconds to delay.
- * @param immediate If true, the callback will be invoked immediately on the leading edge of the timeout. Default is false.
- * @param skip An optional predicate function that, when provided, will be called with the arguments of the debounced function. If it returns true, the callback will not be invoked and the timer will not be reset.
+ * @param options An object containing debounce options.
  * @returns A new debounced function.
  */
-export function debounce(callback: (args: IArguments) => void, delayMs: number, immediate: boolean, skip?: Predicate<IArguments>) {
-  let timer: Nullable<NodeJS.Timeout> = null;
-  const cb = (args: IArguments) => {
-    callback(args);
+export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>, options: Partial<DebounceOptions<TArgs>>): DebounceCallback<TArgs> {
+  const opts = new DebounceOptions(options);
+  let timer: Nullable<ReturnType<typeof setTimeout>> = null;
+
+  const cb = (...args: TArgs) => {
+    if (opts.debug) {
+      console.debug('Debounce callback executed.', ...args);
+    }
+    callback(...args);
   };
 
-  return function () {
-    let args = arguments;
-
-    if (skip?.(args) === true) {
+  return function (...args: TArgs) {
+    if (opts.shouldSkip?.(...args) === true) {
+      if (opts.debug) {
+        console.debug('Debounce skipped.', ...args);
+      }
       return;
     }
 
     if (timer != null) {
       clearTimeout(timer);
     }
-    if (immediate) {
+
+    if (opts.immediate) {
       if (timer) {
         timer = setTimeout(() => {
-          cb(args);
+          cb(...args);
           timer = null;
-        }, delayMs);
+        }, opts.debounceMs);
       } else {
-        timer = setTimeout(() => timer = null, delayMs);
-        cb(args);
+        timer = setTimeout(() => timer = null, opts.debounceMs);
+        cb(...args);
       }
     } else {
       timer = setTimeout(() => {
-        cb(args);
+        cb(...args);
         timer = null;
-      }, delayMs);
+      }, opts.debounceMs);
     }
   };
 }

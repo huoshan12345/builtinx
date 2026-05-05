@@ -16,7 +16,7 @@ import '@/extensions/url';
 import "@/helpers";
 
 export * from "@/types/lib";
-export * from "@/types/mutation-observer-options";
+export * from "@/types/mutation-observer";
 
 export * from "@/utils/http-error";
 export * from "@/utils/lazy";

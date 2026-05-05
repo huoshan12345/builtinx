@@ -1,18 +1,20 @@
+import type { Predicate } from './lib';
+
 /** 
  * A predicate function for MutationRecord.
  * @returns true if the mutation should be IGNORED (excluded).
  */
-export type MutationExclude = (record: MutationRecord) => boolean;
+export type MutationExclusion = (record: MutationRecord) => boolean;
 
 /** 
  * A transformation function to modify the existing list of exclude rules.
  */
-export type MutationExcludesTransformer = (prevExcludes: MutationExclude[]) => MutationExclude[];
+export type MutationExclusionTransformer = (prevExcludes: MutationExclusion[]) => MutationExclusion[];
 
 /** 
  * Input type for the excludes property: a direct array or a transformer function.
  */
-export type MutationExcludesInput = MutationExclude[] | MutationExcludesTransformer;
+export type MutationExclusionsInput = MutationExclusion[] | MutationExclusionTransformer;
 
 /** 
  * Enhanced callback including the target node being observed.
@@ -30,6 +32,27 @@ export type MutationCallbackParams = Parameters<MutationCallback>;
 export type NodeMutationCallbackParams = Parameters<NodeMutationCallback>;
 
 /**
+ * Options for the enhanced MutationObserver, extending the standard MutationObserverInit.
+ * Includes additional properties for debouncing and mutation exclusion logic.
+ */
+export class DebounceMutationCallbackOptions {
+  /** If true, logs detailed information about mutations and exclusions to the console. */
+  debug: boolean = false;
+  /** Debounce interval in milliseconds. */
+  debounceMs: number = 1000;
+  /** If true, triggers the callback on the leading edge of the debounce. */
+  immediate: boolean = false;
+  /** If true, executes the callback once immediately after observation starts. */
+  callAtOnce: boolean = false;
+  /** List of predicates to determine which mutations should be excluded (ignored). */
+  exclusions: Predicate<MutationRecord>[] = [];
+
+  constructor(options: Partial<DebounceMutationCallbackOptions>) {
+    Object.assign(this, options);
+  }
+}
+
+/**
  * Configuration for an enhanced MutationObserver.
  * Custom properties handle debouncing and mutation filtering (exclusion logic).
  */
@@ -44,7 +67,6 @@ export class MutationObserverOptions implements MutationObserverInit {
   subtree: boolean = true;
 
   // --- Extended Properties ---
-
   /** 
    * Debounce interval in milliseconds. 
    */
@@ -60,41 +82,55 @@ export class MutationObserverOptions implements MutationObserverInit {
    */
   callAtOnce: boolean = true;
 
-  private _excludes: MutationExclude[] = [];
-
   /** 
-   * A list of predicates. If ANY predicate returns TRUE, the MutationRecord is discarded.
+   * If true, logs detailed information about mutations and exclusions to the console.
    */
-  public get excludes(): MutationExclude[] {
-    return this._excludes;
+  debug: boolean = false;
+
+  private _exclusions: MutationExclusion[] = [];
+
+  /**
+   * Get the current list of mutation exclusion predicates.
+   */
+  public get exclusions(): MutationExclusionsInput {
+    return this._exclusions;
   }
 
-  public set excludes(value: MutationExcludesInput) {
+  /** 
+   * Set the exclusions either by providing a new array or by passing a transformer function.
+   * The transformer receives the current list of exclusions and should return a new list.
+   */
+  public set exclusions(value: MutationExclusionsInput) {
     if (typeof value === 'function') {
-      this._excludes = value(this._excludes);
+      this._exclusions = value(this._exclusions);
     } else {
-      this._excludes = value;
+      this._exclusions = value;
     }
   }
 
-  // --- Static Default Management ---
+  /** 
+   * Returns the resolved list of exclusion predicates.
+   */
+  public get resolvedExclusions(): MutationExclusion[] {
+    return this._exclusions;
+  }
 
-  private static _globalDefaults: Partial<MutationObserverOptions> = {};
+  private static _default: Partial<MutationObserverOptions> = {};
 
   public static get default(): Partial<MutationObserverOptions> {
-    return MutationObserverOptions._globalDefaults;
+    return MutationObserverOptions._default;
   }
 
   public static set default(value: Partial<MutationObserverOptions>) {
-    MutationObserverOptions._globalDefaults = {
-      ...MutationObserverOptions._globalDefaults,
+    MutationObserverOptions._default = {
+      ...MutationObserverOptions._default,
       ...value
     };
   }
 
   constructor(init?: Partial<MutationObserverOptions>) {
     // Priority: Instance defaults < Global defaults < Constructor arguments
-    Object.assign(this, MutationObserverOptions._globalDefaults, init);
+    Object.assign(this, MutationObserverOptions._default, init);
   }
 
   /**

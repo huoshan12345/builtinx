@@ -52,19 +52,20 @@ function isTextNode(this: Node): boolean {
 };
 
 function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
-  const cb = (...args: NodeMutationCallbackParams) => {
-    callback(...args);
-  };
-
-  const o = new MutationObserverOptions(options);
+  const opts = new MutationObserverOptions(options);
   const node = this;
-  let observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback((m, n) => cb(m, n, node), o.debounceMs, o.immediate, o.excludes));
+  let observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback((records, observer) => callback(records, observer, node), {
+    debug: opts.debug,
+    debounceMs: opts.debounceMs,
+    immediate: opts.immediate,
+    exclusions: opts.resolvedExclusions,
+  }));
 
-  if (o.callAtOnce) {
-    cb([], observer, node);
+  if (opts.callAtOnce) {
+    callback([], observer, node);
   }
 
-  observer.observe(node, o.toNativeInit());
+  observer.observe(node, opts.toNativeInit());
   return observer;
 }
 
