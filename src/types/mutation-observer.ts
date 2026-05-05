@@ -79,8 +79,6 @@ export class MutationObserverOptions implements MutationObserverInit {
   immediate: boolean = true;
   /** If true, executes the callback once immediately after observation starts. */
   callAtOnce: boolean = true;
-  /** If true, logs detailed information about mutations and exclusions to the console. */
-  log: boolean = false;
   /** Optional callback to be executed before the main callback. */
   beforeCallback?: NodeMutationCallback;
   /** Optional callback to be executed after the main callback. */

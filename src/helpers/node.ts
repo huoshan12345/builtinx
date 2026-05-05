@@ -13,16 +13,17 @@ export interface Node {
 export const Node: Node = {
   debounceMutationCallback(callback: MutationCallback, options: Partial<DebounceMutationCallbackOptions>): MutationCallback {
     const opts = new DebounceMutationCallbackOptions(options);
-    return BuiltinX.debounce((records, observer) => {
-      const filtered = records.filter(m => !opts.exclusions.some(x => x(m)));
-      callback(filtered, observer);
-    }, {
+    return BuiltinX.debounce(callback, {
       beforeCallback: opts.beforeCallback,
       afterCallback: opts.afterCallback,
       onSkipped: opts.onSkipped,
       debounceMs: opts.debounceMs,
       immediate: opts.immediate,
-      shouldSkip: records => records.count(m => !opts.exclusions.some(x => x(m))) === 0,
+      shouldSkip: m => {
+        const filtered = m.filter(m => !opts.exclusions.some(x => x(m)));
+        m.replaceFrom(filtered); // Update the original array with the filtered records
+        return filtered.length === 0;
+      },
     });
   }
 }
