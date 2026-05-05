@@ -1,5 +1,5 @@
 import type { Awaitable, Nullable } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 import { TimeSpan } from '@/utils/time-span';
 
 declare global {

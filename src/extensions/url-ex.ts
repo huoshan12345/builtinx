@@ -1,5 +1,5 @@
 import type { URLLike } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 
 declare global {
   var URLEx: typeof globalThis.URL & {

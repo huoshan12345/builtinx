@@ -16,10 +16,10 @@ import '@/extensions/url';
 import "@/helpers";
 
 export * from "@/types/lib";
+export * from "@/types/mutation-observer-options";
 
 export * from "@/utils/http-error";
 export * from "@/utils/lazy";
-export * from "@/utils/object";
 export * from "@/utils/queue";
 export * from "@/utils/stack";
 export * from "@/utils/string-builder";

@@ -1,4 +1,5 @@
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
+import { MutationObserverOptions, type NodeMutationCallback, type NodeMutationCallbackParams } from '..';
 
 declare global {
   interface Node {
@@ -17,6 +18,11 @@ declare global {
      * Returns true if this node is a Text node that contains only whitespace and new line characters.
      */
     isNewLineTextNode(): boolean;
+
+    /**
+     * Observe mutations on this node and its subtree.     
+     */
+    observe(callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>): MutationObserver;
   }
 }
 
@@ -45,6 +51,24 @@ function isTextNode(this: Node): boolean {
   return this.nodeType === Node.TEXT_NODE;
 };
 
+function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
+  const cb = (...args: NodeMutationCallbackParams) => {
+    callback(...args);
+  };
+
+  const o = new MutationObserverOptions(options);
+  const node = this;
+  let observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback((m, n) => cb(m, n, node), o.debounceMs, o.immediate, o.excludes));
+
+  if (o.callAtOnce) {
+    cb([], observer, node);
+  }
+
+  observer.observe(node, o.toNativeInit());
+  return observer;
+}
+
 definePropertyIfAbsent(Node.prototype, "ownText", ownText);
 definePropertyIfAbsent(Node.prototype, "isNewLineTextNode", isNewLineTextNode);
 definePropertyIfAbsent(Node.prototype, "isTextNode", isTextNode);
+definePropertyIfAbsent(Node.prototype, "observe", observe);

@@ -1,5 +1,5 @@
 import type { MatchPattern, Nullable } from "@/types/lib";
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 
 declare global {
   interface String {

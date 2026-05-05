@@ -1,5 +1,5 @@
 import type { Extractor, MatchPattern, Nullable, Nullishable } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 
 declare global {
   interface Array<T> {

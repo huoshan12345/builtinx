@@ -1,4 +1,4 @@
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 
 declare global {
   interface Blob {

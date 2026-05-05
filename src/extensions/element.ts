@@ -1,4 +1,4 @@
-import { definePropertyIfAbsent } from '@/utils/object';
+import { definePropertyIfAbsent } from '@/helpers/utils';
 
 type StyledElement = Element & ElementCSSInlineStyle;
 
