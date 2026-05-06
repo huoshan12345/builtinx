@@ -137,16 +137,17 @@ describe('Node.prototype.observe', () => {
     observeMock = vi.fn();
     disconnectMock = vi.fn();
 
-    // mock MutationObserver
     (global as any).MutationObserver = vi.fn(function (cb: MutationCallback) {
-      trigger = (records: MutationRecord[]) => {
-        cb(records, this);
-      };
-
-      return {
+      const instance = {
         observe: observeMock,
         disconnect: disconnectMock
       };
+
+      trigger = (records: MutationRecord[]) => {
+        cb(records, instance as unknown as MutationObserver);
+      };
+
+      return instance;
     });
   });
 
