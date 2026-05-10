@@ -5,11 +5,11 @@ on:
       - main
     paths:
       - .github/workflows/build.yml
-      - tsconfig.json
-      - tsconfig.build.json
-      - package.json
-      - '*.js'
-      - '*.ts'
+      - '*.sln'
+      - '*.slnx'
+      - build/pack.ps1
+      - build/pkg.version
+      - NuGet.Config
       - src/**
       - test/**
   pull_request_target: # use pull_request_target instead of pull_request to let dependabot have permission to access action secrets.
