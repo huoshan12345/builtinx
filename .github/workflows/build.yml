@@ -5,13 +5,12 @@ on:
       - main
     paths:
       - .github/workflows/build.yml
-      - '*.sln'
-      - '*.slnx'
-      - build/pack.ps1
-      - build/pkg.version
-      - NuGet.Config
+      - '*.js'
+      - '*.ts'
+      - package.json
       - src/**
       - test/**
+      - tsconfig.json
   pull_request_target: # use pull_request_target instead of pull_request to let dependabot have permission to access action secrets.
     branches:
       - main
@@ -92,7 +91,7 @@ jobs:
         uses: huoshan12345/update-tag@v1
         with:
           tag_name: ${{ env.VERSION }}
-          update_if_exists: true
+          update_if_exists: false
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
