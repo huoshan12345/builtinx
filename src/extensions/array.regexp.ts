@@ -82,13 +82,13 @@ function rewrite(this: RegExp[] | Extractor<string>[], input: Nullishable<string
   let last = input;
   for (let i = 0; i < replacers.length; i++) {
     const [reg, func] = replacers[i];
-    const match = reg.find(last);
+    const temp = reg.global
+      ? replaceAllMatches(last, reg.findAll(last), func)
+      : replaceFirstMatch(last, reg, func);
 
-    if (!match)
+    if (temp === null)
       continue;
 
-    const v = func(match);
-    const temp = replaceMatch.call(match, v);
     if (temp !== last) {
       if (count++ > 65536) {
         console.error('infinite match detected: ' + temp);
@@ -102,6 +102,30 @@ function rewrite(this: RegExp[] | Extractor<string>[], input: Nullishable<string
     }
   }
   return last;
+}
+
+function replaceFirstMatch(input: string, reg: RegExp, func: (match: RegExpExecArray) => string): string | null {
+  const match = reg.find(input);
+  if (!match)
+    return null;
+
+  return replaceMatch.call(match, func(match));
+}
+
+function replaceAllMatches(
+  input: string,
+  matches: RegExpExecArray[],
+  func: (match: RegExpExecArray) => string,
+): string | null {
+  if (matches.length === 0)
+    return null;
+
+  let output = input;
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const match = matches[i];
+    output = output.substring(0, match.index) + func(match) + output.substring(match.index + match[0].length);
+  }
+  return output;
 }
 
 function replaceMatch(this: RegExpExecArray, replaceValue: string): string {
