@@ -26,6 +26,10 @@ describe("Array.prototype.rewrite", () => {
     expect([/cat/, /dog/].rewrite("cat and dog", "pet")).toBe("pet and pet");
   });
 
+  it("rewrites every global regular-expression match even when the first match is unchanged", () => {
+    expect([/a|b/g].rewrite("ab", "a")).toBe("aa");
+  });
+
   it("defaults replacement text to an empty string for regular-expression rules", () => {
     expect([/ab/].rewrite("zabz")).toBe("zz");
   });
@@ -58,6 +62,14 @@ describe("Array.prototype.rewrite", () => {
     ];
 
     expect(extractors.rewrite("Hello, Alice!")).toBe("Hi, Alice!");
+  });
+
+  it("rewrites every global extractor match even when an earlier match is unchanged", () => {
+    const extractors: Extractor<string>[] = [
+      [/\d/g, match => match[0] === "1" ? "1" : "x"],
+    ];
+
+    expect(extractors.rewrite("123")).toBe("1xx");
   });
 
   it("preserves zero-length matches when replacement does not change the input", () => {
