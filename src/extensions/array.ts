@@ -84,6 +84,19 @@ declare global {
     append<T>(this: T[], item: T): T[];
 
     /**
+     * Inserts an item at the specified index and returns the array.
+     *
+     * Supports negative indexes using `splice` semantics: -1 inserts before the last item.
+     * Does nothing when the index is out of range. The index equal to the array length appends the item.
+     */
+    insert(index: number, item: T): this;
+
+    /**
+     * Inserts an item at the beginning of the array and returns the array.
+     */
+    prepend(item: T): this;
+
+    /**
      * Counts elements by key.
      *
      * Returns a Map whose keys are produced by the selector,
@@ -293,6 +306,17 @@ function append<T>(this: T[], item: T) {
   return this;
 };
 
+function insert<T>(this: T[], index: number, item: T) {
+  if (this.hasIndex(index) || index === this.length) {
+    this.splice(index, 0, item);
+  }
+  return this;
+}
+
+function prepend<T>(this: T[], item: T) {
+  return this.insert(0, item);
+}
+
 function count<T>(this: T[],
   predicate?: (item: T, index: number, array: readonly T[]) => boolean
 ): number {
@@ -387,6 +411,8 @@ definePropertyIfAbsent(Array.prototype, 'last', last);
 definePropertyIfAbsent(Array.prototype, 'distinct', distinct);
 definePropertyIfAbsent(Array.prototype, 'groupBy', groupBy);
 definePropertyIfAbsent(Array.prototype, 'append', append);
+definePropertyIfAbsent(Array.prototype, 'insert', insert);
+definePropertyIfAbsent(Array.prototype, 'prepend', prepend);
 definePropertyIfAbsent(Array.prototype, 'countBy', countBy);
 definePropertyIfAbsent(Array.prototype, 'count', count);
 definePropertyIfAbsent(Array.prototype, 'resize', resize);

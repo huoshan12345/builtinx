@@ -147,6 +147,52 @@ describe("Array.prototype.hasIndex", () => {
   });
 });
 
+describe("Array.prototype.insert", () => {
+  it("inserts at the beginning, middle, and end", () => {
+    const beginning = [2, 3];
+    const middle = [1, 3];
+    const end = [1, 2];
+    const empty: number[] = [];
+
+    expect(beginning.insert(0, 1)).toBe(beginning);
+    middle.insert(1, 2);
+    end.insert(end.length, 3);
+    empty.insert(0, 1);
+
+    expect(beginning).toEqual([1, 2, 3]);
+    expect(middle).toEqual([1, 2, 3]);
+    expect(end).toEqual([1, 2, 3]);
+    expect(empty).toEqual([1]);
+  });
+
+  it("supports negative indexes using splice semantics", () => {
+    const values = [1, 2, 3];
+
+    values.insert(-1, 9);
+
+    expect(values).toEqual([1, 2, 9, 3]);
+  });
+
+  it("does nothing for out-of-range indexes", () => {
+    const values = [1, 2];
+
+    values.insert(3, 3);
+    values.insert(-3, 0);
+    values.insert(1.5, 9);
+
+    expect(values).toEqual([1, 2]);
+  });
+});
+
+describe("Array.prototype.prepend", () => {
+  it("inserts an item at the beginning and returns the array", () => {
+    const values = [2, 3];
+
+    expect(values.prepend(1)).toBe(values);
+    expect(values).toEqual([1, 2, 3]);
+  });
+});
+
 describe("Array.prototype.removeAt", () => {
   it("removes and returns item by positive index", () => {
     const arr = ["a", "b", "c"];
