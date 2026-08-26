@@ -7,16 +7,12 @@ export class TimeSpan {
   private _millis: number;
 
   private static interval(value: number, scale: number): TimeSpan {
-    if (Number.isNaN(value)) {
-      throw new Error("value can't be NaN");
+    if (!Number.isFinite(value)) {
+      throw new RangeError("Value must be finite.");
     }
 
     const tmp = value * scale;
     const millis = TimeSpan.round(tmp + (value >= 0 ? 0.5 : -0.5));
-    if ((millis > TimeSpan.maxValue.totalMilliseconds) || (millis < TimeSpan.minValue.totalMilliseconds)) {
-      throw new Error("TimeSpanTooLong");
-    }
-
     return new TimeSpan(millis);
   }
 
@@ -69,13 +65,20 @@ export class TimeSpan {
       + (seconds * MILLIS_PER_SECOND)
       + milliseconds;
 
-    if (totalMilliSeconds > TimeSpan.maxValue.totalMilliseconds || totalMilliSeconds < TimeSpan.minValue.totalMilliseconds) {
-      throw new Error("TimeSpanTooLong");
-    }
     return new TimeSpan(totalMilliSeconds);
   }
 
+  /**
+   * Creates a duration from an integer number of milliseconds.
+   *
+   * The value must be a finite safe integer. The single-unit factory methods round
+   * fractional units before they reach this constructor.
+   */
   constructor(millis: number) {
+    if (!Number.isSafeInteger(millis)) {
+      throw new RangeError("Milliseconds must be a finite safe integer.");
+    }
+
     this._millis = millis;
   }
 

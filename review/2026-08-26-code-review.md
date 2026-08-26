@@ -6,7 +6,7 @@ Reviewed every TypeScript file under `src/`, starting with package boundaries an
 
 Validation completed:
 
-- `pnpm test -- --run` — 27 test files and 560 tests passed.
+- `pnpm test -- --run` — 28 test files and 564 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -18,6 +18,7 @@ Validation completed:
 - Finding 5 is **fixed and verified**. `leading` and `trailing` are independent options, both defaulting to true, and regression coverage verifies their combined and disabled behavior.
 - The mutation-observer startup option is **refined and verified**. `callAtOnce` was renamed to `callOnStart` to distinguish startup invocation from debounce-edge behavior. The default remains true and the runtime behavior is unchanged.
 - Finding 6 is **fixed and verified**. `Lazy<T>` now caches nullish values as successful creation results and provides `reset()` to discard the cache without invoking the factory.
+- Finding 7 is **partially fixed and verified**. Construction, factory input, and arithmetic results now maintain the finite safe-integer-millisecond invariant; the string round-trip limitation remains.
 
 ## Design summary
 
@@ -75,13 +76,13 @@ Evidence: `src/utils/lazy.ts:7`, `src/utils/lazy.ts:15`, `src/utils/lazy.ts:31`;
 
 No further action is required for this finding.
 
-### 7. [P1] `TimeSpan` does not maintain a valid, parseable value invariant
+### 7. [P1] `TimeSpan.toString()` is not parseable for values with days
 
-The public constructor accepts `NaN`, infinities, and fractional millisecond values. `TimeSpan.from` also accepts `NaN` because its range comparison evaluates false, while `add` and `subtract` can exceed the advertised extrema without validation. Invalid values then flow into consumers such as `Storage.setCache` and `Timer.every`. Separately, the string form for a value with days, such as `1.0:0:0`, cannot be read by `TimeSpan.parse`, whose grammar has no day component.
+The constructor now requires finite safe-integer milliseconds, and all factory and arithmetic paths flow through that validation. However, the string form for a value with days, such as `1.0:0:0`, still cannot be read by `TimeSpan.parse`, whose grammar has no day component.
 
-Evidence: `src/utils/time-span.ts:65`, `src/utils/time-span.ts:78`, `src/utils/time-span.ts:122`, `src/utils/time-span.ts:132`, `src/utils/time-span.ts:145`.
+Evidence: `src/utils/time-span.ts:74`, `src/utils/time-span.ts:137`, `src/utils/time-span.ts:150`; validation regression tests in `test/utils/time-span.test.ts`.
 
-Make construction private or validate every creation path through one finite, safe-integer-millisecond factory. Define overflow behavior for arithmetic. Then make `parse` accept exactly the format produced by `toString` (including signed values if they are supported), and add round-trip tests.
+Make `parse` accept exactly the format produced by `toString` (including signed values if they are supported), and add round-trip tests.
 
 ### 8. [P1] `Timer.every` has no interval validation or prompt cancellation path
 
