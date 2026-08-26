@@ -29,6 +29,14 @@ declare global {
     takeCache<T>(key: string): Nullable<T>;
 
     /**
+     * Parses and returns the JSON value stored for the specified key.
+     *
+     * Returns null when the key is missing.
+     * @throws {SyntaxError} When the stored value is not valid JSON.
+     */
+    getJsonValue<T>(key: string): Nullable<T>;
+
+    /**
      * Returns the cached value for the specified key, or creates and stores one when absent.
      *
      * The factory is only called when the current cache entry is missing, expired, or unrecognized.
@@ -133,6 +141,11 @@ function takeCache<T>(this: Storage, key: string): Nullable<T> {
   return value;
 }
 
+function getJsonValue<T>(this: Storage, key: string): Nullable<T> {
+  const value = this.getItem(key);
+  return value === null ? null : JSON.parse(value) as T;
+}
+
 async function getOrCreateCacheAsync<T>(this: Storage, key: string, factory: (key: string) => Awaitable<T>, expiration: TimeSpan) {
   let obj = this.getCache<T>(key);
   if (obj == null) {
@@ -155,5 +168,6 @@ definePropertyIfAbsent(Storage.prototype, 'cleanupExpired', cleanupExpired);
 definePropertyIfAbsent(Storage.prototype, 'setCache', setCache);
 definePropertyIfAbsent(Storage.prototype, 'getCache', getCache);
 definePropertyIfAbsent(Storage.prototype, 'takeCache', takeCache);
+definePropertyIfAbsent(Storage.prototype, 'getJsonValue', getJsonValue);
 definePropertyIfAbsent(Storage.prototype, 'getOrCreateCacheAsync', getOrCreateCacheAsync);
 definePropertyIfAbsent(Storage.prototype, 'keys', keys);

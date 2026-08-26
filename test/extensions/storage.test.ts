@@ -109,6 +109,28 @@ describe("Storage.prototype.takeCache", () => {
   });
 });
 
+describe("Storage.prototype.getJsonValue", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns a parsed JSON value", () => {
+    localStorage.setItem("settings", JSON.stringify({ theme: "dark" }));
+
+    expect(localStorage.getJsonValue<{ theme: string }>("settings")).toEqual({ theme: "dark" });
+  });
+
+  it("returns null when the key is missing", () => {
+    expect(localStorage.getJsonValue("missing")).toBeNull();
+  });
+
+  it("throws when the stored value is invalid JSON", () => {
+    localStorage.setItem("invalid", "not json");
+
+    expect(() => localStorage.getJsonValue("invalid")).toThrow(SyntaxError);
+  });
+});
+
 describe("Storage.prototype.getOrCreateCacheAsync", () => {
   beforeEach(() => {
     localStorage.clear();
