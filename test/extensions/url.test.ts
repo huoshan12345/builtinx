@@ -260,3 +260,64 @@ describe("URL.prototype.resolve", () => {
     expect(url.resolve("https://other.test/path").href).toBe("https://other.test/path");
   });
 });
+
+describe("URL.prototype.clone", () => {
+  it("returns an independent copy", () => {
+    const url = new URL("https://example.com/path?a=1");
+
+    const cloned = url.clone();
+    cloned.setParam("a", "2");
+
+    expect(cloned).not.toBe(url);
+    expect(cloned.href).toBe("https://example.com/path?a=2");
+    expect(url.href).toBe("https://example.com/path?a=1");
+  });
+
+  it("allows the callback to modify the copy before returning it", () => {
+    const url = new URL("https://example.com/path?a=1");
+
+    const cloned = url.clone(copy => copy.setParam("a", "2"));
+
+    expect(cloned.href).toBe("https://example.com/path?a=2");
+    expect(url.href).toBe("https://example.com/path?a=1");
+  });
+});
+
+describe("URL.prototype.hasNoParams and hasParams", () => {
+  it("identifies URLs without query parameters", () => {
+    const url = new URL("https://example.com/path");
+
+    expect(url.hasNoParams()).toBe(true);
+    expect(url.hasParams()).toBe(false);
+  });
+
+  it("identifies URLs with query parameters", () => {
+    const url = new URL("https://example.com/path?a=1");
+
+    expect(url.hasNoParams()).toBe(false);
+    expect(url.hasParams()).toBe(true);
+  });
+});
+
+describe("URL.prototype.tryDeleteParam", () => {
+  it("deletes an existing parameter and returns true", () => {
+    const url = new URL("https://example.com/path?a=1");
+
+    expect(url.tryDeleteParam("a")).toBe(true);
+    expect(url.searchParams.has("a")).toBe(false);
+  });
+
+  it("deletes only matching values when a value is provided", () => {
+    const url = new URL("https://example.com/path?a=1&a=2");
+
+    expect(url.tryDeleteParam("a", "1")).toBe(true);
+    expect(url.searchParams.getAll("a")).toEqual(["2"]);
+  });
+
+  it("returns false without changing the URL when no matching parameter exists", () => {
+    const url = new URL("https://example.com/path?a=1");
+
+    expect(url.tryDeleteParam("a", "2")).toBe(false);
+    expect(url.href).toBe("https://example.com/path?a=1");
+  });
+});

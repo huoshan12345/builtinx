@@ -77,6 +77,31 @@ declare global {
      * Resolves a relative or absolute URL reference against this URL.
      */
     resolve(path: string): URL;
+
+    /**
+     * Returns an independent copy of this URL.
+     *
+     * The optional callback can modify the copy before it is returned.
+     */
+    clone(func?: (url: URL) => void): URL;
+
+    /**
+     * Returns whether this URL has no query parameters.
+     */
+    hasNoParams(): boolean;
+
+    /**
+     * Returns whether this URL has at least one query parameter.
+     */
+    hasParams(): boolean;
+
+    /**
+     * Deletes a query parameter when it exists.
+     *
+     * When `value` is provided, only matching values are deleted.
+     * Returns whether a parameter was deleted.
+     */
+    tryDeleteParam(key: string, value?: string): boolean;
   }
 }
 
@@ -167,6 +192,27 @@ function resolve(this: URL, path: string) {
   return new URL(path, this);
 };
 
+function clone(this: URL, func?: (url: URL) => void): URL {
+  const cloned = new URL(this.href);
+  if (func) {
+    func(cloned);
+  }
+  return cloned;
+}
+
+function hasNoParams(this: URL): boolean {
+  return this.searchParams.isEmpty();
+}
+
+function hasParams(this: URL): boolean {
+  return this.searchParams.isNotEmpty();
+}
+
+function tryDeleteParam(this: URL, key: string, value?: string): boolean {
+  const deleted = this.searchParams.tryDelete(key, value);
+  return deleted;
+}
+
 definePropertyIfAbsent(URL.prototype, 'setParam', setParam);
 definePropertyIfAbsent(URL.prototype, 'getParam', getParam);
 definePropertyIfAbsent(URL.prototype, 'getNumberParam', getNumberParam);
@@ -179,3 +225,7 @@ definePropertyIfAbsent(URL.prototype, 'goto', goto);
 definePropertyIfAbsent(URL.prototype, 'setHost', setHost);
 definePropertyIfAbsent(URL.prototype, 'setProtocol', setProtocol);
 definePropertyIfAbsent(URL.prototype, 'resolve', resolve);
+definePropertyIfAbsent(URL.prototype, 'clone', clone);
+definePropertyIfAbsent(URL.prototype, 'hasNoParams', hasNoParams);
+definePropertyIfAbsent(URL.prototype, 'hasParams', hasParams);
+definePropertyIfAbsent(URL.prototype, 'tryDeleteParam', tryDeleteParam);

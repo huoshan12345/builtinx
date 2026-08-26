@@ -25,13 +25,14 @@
     "postpack": "pinst --enable",
     "preinstall": "npx only-allow pnpm",
     "clean": "shx rm -rf dist/** && shx rm -f *.tgz",
-    "dev": "vite",
+    "dev": "run-s type-check:watch",
     "build": "run-s clean && run-s build:ts && run-s build:dts",
     "build:ts": "run-s type-check && vite build",
     "build:dts": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
     "ncu": "npx npm-check-updates -u"
   },
   "devDependencies": {
