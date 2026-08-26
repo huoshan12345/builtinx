@@ -2,11 +2,11 @@
 
 ## Scope and validation
 
-Reviewed every TypeScript file under `src/`, starting with package boundaries and public APIs, then examining each implementation. No production code was changed.
+Reviewed every TypeScript file under `src/`, starting with package boundaries and public APIs, then examining each implementation. This report also records the verification of follow-up production changes requested by the owner.
 
 Validation completed:
 
-- `pnpm test -- --run` — 29 test files and 573 tests passed.
+- `pnpm test -- --run` — 29 test files and 575 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -21,6 +21,7 @@ Validation completed:
 - Finding 7 is **fixed and verified**. Construction, factory input, and arithmetic results maintain the finite safe-integer-millisecond invariant, and `parse` supports the day-qualified string form produced by `toString`.
 - Finding 8 is **fixed and verified**. `Timer.every` validates its interval and accepts an optional `AbortSignal` that completes the generator promptly during a pending wait.
 - Finding 9 is **fixed and verified**. `Http.downloadText` now exposes its Promise return type and defaults to the standard `text/plain` MIME type.
+- Finding 10 is **fixed and verified**. Non-sticky `find` and `findAll` retain their from-the-start search contract, while sticky (`y`) expressions begin at their current `lastIndex` and preserve sticky matching semantics. Both methods restore the caller's original `lastIndex` afterward.
 
 ## Design summary
 
@@ -102,13 +103,13 @@ Evidence: `src/helpers/http.ts:9`, `src/helpers/http.ts:12`, `src/helpers/http.t
 
 No further action is required for this finding.
 
-### 10. [P2] `RegExp.find` and `findAll` do not honor sticky regular expressions
+### 10. [Fixed] `RegExp.find` and `findAll` support sticky regular expressions
 
-Both methods promise to find matches in the input, but reset `lastIndex` to zero. A sticky regex such as `/id/y` therefore fails to find `"xxid"`, and `findAll` clones a non-global sticky expression as `/id/gy`, which still only matches at the current index. This silently produces no matches instead of either searching the input or preserving sticky semantics.
+For non-sticky expressions, the helpers are from-the-start search operations: they set the working expression's `lastIndex` to zero and restore its prior value afterward. Sticky (`y`) expressions instead begin at their current `lastIndex`; `findAll` adds `g` only when necessary and retains `y`. This preserves `/id/y` and `/id/gy` cursor semantics while still restoring the caller's expression state after the operation.
 
-Evidence: `src/extensions/regexp.ts:10`, `src/extensions/regexp.ts:20`, `src/extensions/regexp.ts:27`.
+Evidence: `src/extensions/regexp.ts:10`, `src/extensions/regexp.ts:17`, `src/extensions/regexp.ts:31`; regression tests in `test/extensions/regexp.test.ts` and `test/extensions/string.test.ts`.
 
-Decide whether these helpers are searches or cursor-based operations. For search semantics, reject or normalize away `y` when cloning and avoid relying on a sticky original. For cursor semantics, preserve and document `lastIndex` instead of resetting it. Add sticky-regex tests for both methods.
+No further action is required for this finding.
 
 ### 11. [P2] Storage documentation still says invalid entries are removed
 

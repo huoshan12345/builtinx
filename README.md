@@ -100,8 +100,8 @@ String helpers:
 
 RegExp helpers:
 
-- `find(input)` returns the first match and resets `lastIndex`.
-- `findAll(input)` returns all matches and protects against zero-length-match loops.
+- `find(input)` returns the first match from the beginning of the input and restores `lastIndex` afterward. Sticky (`y`) patterns instead match at their current `lastIndex`.
+- `findAll(input)` returns all matches from the beginning of the input, restores `lastIndex` afterward, and protects against zero-length-match loops. Sticky (`y`) patterns begin at their current `lastIndex` and retain sticky matching semantics.
 
 ```ts
 "foo/bar/baz".skipUntil("/");       // "bar/baz"

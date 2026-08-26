@@ -9,8 +9,12 @@ declare global {
 
 function find(this: RegExp, input: string): RegExpExecArray | null {
   const lastIndex = this.lastIndex;
+
   try {
-    this.lastIndex = 0;
+    if (!this.sticky) {
+      this.lastIndex = 0;
+    }
+
     return this.exec(input);
   } finally {
     this.lastIndex = lastIndex;
@@ -26,7 +30,7 @@ function findAll(this: RegExp, input: string): RegExpExecArray[] {
   const lastIndex = regex.lastIndex;
 
   try {
-    regex.lastIndex = 0;
+    regex.lastIndex = this.sticky ? this.lastIndex : 0;
 
     let match: RegExpExecArray | null;
 
