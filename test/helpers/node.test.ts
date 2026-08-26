@@ -123,11 +123,12 @@ describe('debounceMutationCallback', () => {
       .toBeLessThan(after.mock.invocationCallOrder[0]);
   });
 
-  test('should execute immediately when immediate=true', () => {
+  test('should execute immediately when leading=true', () => {
     const callback = vi.fn();
 
     const debounced = BuiltinX.Node.debounceMutationCallback(callback, {
-      immediate: true
+      leading: true,
+      trailing: false,
     });
 
     const mutations = [createMutation('attributes')];
@@ -137,11 +138,12 @@ describe('debounceMutationCallback', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  test('should debounce multiple calls (trailing)', () => {
+  test('should debounce multiple calls on the trailing edge', () => {
     const callback = vi.fn();
 
     const debounced = BuiltinX.Node.debounceMutationCallback(callback, {
-      debounceMs: 100
+      debounceMs: 100,
+      leading: false,
     });
 
     const m1 = [createMutation('attributes')];

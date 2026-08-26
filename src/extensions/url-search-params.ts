@@ -70,7 +70,7 @@ declare global {
 }
 
 function getInt(this: URLSearchParams, key: string, defaultValue = 0): number {
-  const v = this.get(key);
+  const v = this.getEffectiveValue(key);
   if (v) {
     const num = Number.parseInt(v, 10);
     if (!Number.isNaN(num))
@@ -80,7 +80,7 @@ function getInt(this: URLSearchParams, key: string, defaultValue = 0): number {
 };
 
 function getBool(this: URLSearchParams, key: string, defaultValue = false): boolean {
-  const v = this.get(key);
+  const v = this.getEffectiveValue(key);
   if (v) {
     return v.equalsIgnoreAsciiCase("true");
   }

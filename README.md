@@ -178,7 +178,7 @@ const observer = document.body.observe(
   },
   {
     debounceMs: 250,
-    callAtOnce: false,
+    callOnStart: false,
     exclusions: [record => record.type === "attributes"],
   }
 );

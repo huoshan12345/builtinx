@@ -184,21 +184,21 @@ describe('Node.prototype.observe', () => {
     expect(callback).toHaveBeenCalledWith(records, expect.anything(), node);
   });
 
-  test('should execute callAtOnce immediately', () => {
+  test('should invoke the callback when observation starts', () => {
     node.observe(callback, {
-      callAtOnce: true
+      callOnStart: true
     });
 
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith([], expect.anything(), node);
   });
 
-  test('should call beforeCallback and afterCallback (callAtOnce)', () => {
+  test('should call beforeCallback and afterCallback on start', () => {
     const before = vi.fn();
     const after = vi.fn();
 
     node.observe(callback, {
-      callAtOnce: true,
+      callOnStart: true,
       beforeCallback: before,
       afterCallback: after
     });
@@ -214,11 +214,11 @@ describe('Node.prototype.observe', () => {
       .toBeLessThan(after.mock.invocationCallOrder[0]);
   });
 
-  test('should debounce callback (default trailing)', () => {
+  test('should debounce callback on the trailing edge', () => {
     node.observe(callback, {
       debounceMs: 100,
-      immediate: false,
-      callAtOnce: false,
+      leading: false,
+      callOnStart: false,
     });
 
     trigger([createMutation('attributes')]);
@@ -231,10 +231,11 @@ describe('Node.prototype.observe', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  test('should execute immediately when immediate=true', () => {
+  test('should execute immediately when leading=true', () => {
     node.observe(callback, {
-      immediate: true,
-      callAtOnce: false,
+      leading: true,
+      trailing: false,
+      callOnStart: false,
     });
 
     trigger([createMutation('attributes')]);
@@ -244,7 +245,7 @@ describe('Node.prototype.observe', () => {
 
   test('should filter mutations using exclusions', () => {
     node.observe(callback, {
-      callAtOnce: false,
+      callOnStart: false,
       exclusions: [
         m => m.type === 'attributes'
       ]
@@ -268,7 +269,7 @@ describe('Node.prototype.observe', () => {
     const onSkipped = vi.fn();
 
     node.observe(callback, {
-      callAtOnce: false,
+      callOnStart: false,
       exclusions: [() => true],
       onSkipped
     });
@@ -285,7 +286,7 @@ describe('Node.prototype.observe', () => {
     const after = vi.fn();
 
     node.observe(callback, {
-      callAtOnce: false,
+      callOnStart: false,
       beforeCallback: before,
       afterCallback: after
     });

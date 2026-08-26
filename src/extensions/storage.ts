@@ -66,7 +66,6 @@ function cleanupExpired(this: Storage): void {
 
     const entry = parseEntry(str);
     if (!entry) {
-      keysToRemove.push(key);
       continue;
     }
 
@@ -92,26 +91,11 @@ function setCache<T>(this: Storage, key: string, value: T, expiration: TimeSpan)
   };
 
   const json = JSON.stringify(obj);
-  for (let i = 0; i < 10; i++) {
-    try {
-      this.setItem(key, json);
-      break;
-    } catch (e) {
-      if (e instanceof DOMException) {
-
-        if (i === 0) {
-          this.cleanupExpired(); // first try to cleanup expired items
-          continue;
-        }
-
-        const k = this.key(0);
-        if (k) {
-          this.removeItem(k);          
-          continue;
-        }
-      }
-      throw e;
-    }
+  try {
+    this.setItem(key, json);
+  } catch (e) {
+    this.cleanupExpired();
+    this.setItem(key, json);
   }
 };
 
@@ -122,7 +106,6 @@ function getCache<T>(this: Storage, key: string): Nullable<T> {
 
   const entry = parseEntry(str);
   if (!entry) {
-    this.removeItem(key);
     return null;
   }
 

@@ -57,7 +57,8 @@ function observe(this: Node, callback: NodeMutationCallback, options?: Partial<M
 
   const debounceOptions = {
     debounceMs: opts.debounceMs,
-    immediate: opts.immediate,
+    leading: opts.leading,
+    trailing: opts.trailing,
     exclusions: opts.resolvedExclusions,
     beforeCallback: (records, obs) => opts.beforeCallback?.(records, obs, node),
     afterCallback: (records, obs) => opts.afterCallback?.(records, obs, node),
@@ -69,7 +70,7 @@ function observe(this: Node, callback: NodeMutationCallback, options?: Partial<M
     debounceOptions),
   );
 
-  if (opts.callAtOnce) {
+  if (opts.callOnStart) {
     opts.beforeCallback?.([], observer, node);
     callback([], observer, node);
     opts.afterCallback?.([], observer, node);

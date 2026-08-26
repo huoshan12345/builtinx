@@ -44,12 +44,7 @@ declare global {
     /**
      * Deletes a query parameter and returns the URL.
      */
-    deleteParam(key: string): URL;
-
-    /**
-     * Deletes a query parameter when it matches the optional value.
-     */
-    tryDeleteParam(key: string, value?: string): boolean;
+    deleteParam(key: string, value?: string): URL;
 
     /**
      * Returns existing query parameters for the specified keys.
@@ -127,17 +122,9 @@ function setParamsFrom(this: URL, params: Iterable<QueryParam>) {
   return this;
 };
 
-function deleteParam(this: URL, key: string) {
-  this.searchParams.delete(key);
+function deleteParam(this: URL, key: string, value?: string) {
+  this.searchParams.delete(key, value);
   return this;
-};
-
-function tryDeleteParam(this: URL, key: string, value?: string) {
-  if (this.hasParam(key, value)) {
-    this.deleteParam(key);
-    return true;
-  }
-  return false;
 };
 
 function getParams(this: URL, keys: Iterable<string>) {
@@ -186,7 +173,6 @@ definePropertyIfAbsent(URL.prototype, 'getNumberParam', getNumberParam);
 definePropertyIfAbsent(URL.prototype, 'hasParam', hasParam);
 definePropertyIfAbsent(URL.prototype, 'setParamsFrom', setParamsFrom);
 definePropertyIfAbsent(URL.prototype, 'deleteParam', deleteParam);
-definePropertyIfAbsent(URL.prototype, 'tryDeleteParam', tryDeleteParam);
 definePropertyIfAbsent(URL.prototype, 'getParams', getParams);
 definePropertyIfAbsent(URL.prototype, 'setBool', setBool);
 definePropertyIfAbsent(URL.prototype, 'goto', goto);

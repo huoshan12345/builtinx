@@ -2,8 +2,11 @@ import type { Nullable } from '@/types/lib';
 import { DebounceOptions, type DebounceCallback } from '@/types/utils';
 
 /**
- * Creates a debounced function that delays invoking the provided callback until after a specified wait time has elapsed since the last time the debounced function was invoked.   
- * Optionally, the callback can be invoked immediately on the leading edge of the timeout instead of the trailing edge.
+ * Creates a debounced function that controls whether the callback runs at the leading edge,
+ * trailing edge, or both edges of a debounce window.
+ *
+ * Both `leading` and `trailing` default to true. When both are enabled, a single call runs
+ * only on the leading edge; a trailing call runs only when a later call occurs in the window.
  * @param callback The function to debounce.
  * @param options An object containing debounce options.
  * @returns A new debounced function.
@@ -11,6 +14,8 @@ import { DebounceOptions, type DebounceCallback } from '@/types/utils';
 export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>, options: Partial<DebounceOptions<TArgs>>): DebounceCallback<TArgs> {
   const opts = new DebounceOptions(options);
   let timer: Nullable<ReturnType<typeof setTimeout>> = null;
+  let trailingArgs: TArgs | undefined;
+  let hasTrailingCall = false;
   const cb = (...args: TArgs) => {
     opts.beforeCallback?.(...args);
     callback(...args);
@@ -23,26 +28,33 @@ export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>,
       return;
     }
 
+    const isFirstCallInWindow = timer == null;
     if (timer != null) {
       clearTimeout(timer);
     }
 
-    if (opts.immediate) {
-      if (timer) {
-        timer = setTimeout(() => {
-          cb(...args);
-          timer = null;
-        }, opts.debounceMs);
-      } else {
-        timer = setTimeout(() => timer = null, opts.debounceMs);
+    if (isFirstCallInWindow && opts.leading) {
+      cb(...args);
+    }
+
+    if (opts.trailing && (!isFirstCallInWindow || !opts.leading)) {
+      trailingArgs = args;
+      hasTrailingCall = true;
+    }
+
+    if (!opts.leading && !opts.trailing) {
+      return;
+    }
+
+    timer = setTimeout(() => {
+      timer = null;
+      if (hasTrailingCall) {
+        const args = trailingArgs!;
+        trailingArgs = undefined;
+        hasTrailingCall = false;
         cb(...args);
       }
-    } else {
-      timer = setTimeout(() => {
-        cb(...args);
-        timer = null;
-      }, opts.debounceMs);
-    }
+    }, opts.debounceMs);
   };
 }
 
