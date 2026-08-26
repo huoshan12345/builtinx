@@ -8,6 +8,7 @@ import '@/extensions/math';
 import '@/extensions/promise';
 import '@/extensions/regexp';
 import '@/extensions/response';
+import '@/extensions/set';
 import '@/extensions/string';
 import '@/extensions/url-ex';
 import '@/extensions/url-search-params';

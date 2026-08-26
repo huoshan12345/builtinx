@@ -109,6 +109,10 @@ RegExp helpers:
 /\d+/.find("id=42")?.[0];           // "42"
 ```
 
+### Set Helpers
+
+- `Set.some(predicate)` returns whether any value satisfies a predicate and stops after the first match.
+
 ### URL and URLSearchParams
 
 URL helpers:
