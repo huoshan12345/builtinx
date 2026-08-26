@@ -6,7 +6,7 @@ Reviewed every TypeScript file under `src/`, starting with package boundaries an
 
 Validation completed:
 
-- `pnpm test -- --run` — 28 test files and 566 tests passed.
+- `pnpm test -- --run` — 29 test files and 573 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -19,6 +19,8 @@ Validation completed:
 - The mutation-observer startup option is **refined and verified**. `callAtOnce` was renamed to `callOnStart` to distinguish startup invocation from debounce-edge behavior. The default remains true and the runtime behavior is unchanged.
 - Finding 6 is **fixed and verified**. `Lazy<T>` now caches nullish values as successful creation results and provides `reset()` to discard the cache without invoking the factory.
 - Finding 7 is **fixed and verified**. Construction, factory input, and arithmetic results maintain the finite safe-integer-millisecond invariant, and `parse` supports the day-qualified string form produced by `toString`.
+- Finding 8 is **fixed and verified**. `Timer.every` validates its interval and accepts an optional `AbortSignal` that completes the generator promptly during a pending wait.
+- Finding 9 is **fixed and verified**. `Http.downloadText` now exposes its Promise return type and defaults to the standard `text/plain` MIME type.
 
 ## Design summary
 
@@ -84,21 +86,21 @@ Evidence: `src/utils/time-span.ts:140`, `src/utils/time-span.ts:150`; regression
 
 No further action is required for this finding.
 
-### 8. [P1] `Timer.every` has no interval validation or prompt cancellation path
+### 8. [Fixed] `Timer.every` validates intervals and supports cancellation
 
-`Timer.every` accepts any `number` or `TimeSpan` and passes it directly to `setTimeout`. Negative, `NaN`, and invalid `TimeSpan` values become effectively zero-delay loops in common runtimes, allowing a consumer to create an unbounded hot loop. The infinite generator also has no `AbortSignal` or cancellation-aware delay, so an externally requested stop cannot interrupt a pending long interval.
+`Timer.every` now rejects non-finite, negative, and platform-overflowing intervals before creating a timer. Its optional `AbortSignal` clears a pending timer and completes the async generator without yielding again.
 
-Evidence: `src/utils/timer.ts:4`.
+Evidence: `src/utils/timer.ts:3`, `src/utils/timer.ts:34`; regression tests in `test/utils/timer.test.ts`.
 
-Reject non-finite or negative intervals before starting the generator. Add an optional `AbortSignal` and use a delay that reacts to abort so the timer's lifecycle is explicit and independently cancellable.
+No further action is required for this finding.
 
-### 9. [P2] `Http.downloadText` exposes the wrong TypeScript contract and default media type
+### 9. [Fixed] `Http.downloadText` exposes its Promise contract and standard media type
 
-The public interface says `downloadText` returns `void`, while the implementation returns a `Promise<void>`. Consumers therefore cannot await the declared API even though the operation may reject while creating or downloading the blob. Its documented and implemented default MIME type is `plain/text`; the standard type for plain text is `text/plain`.
+The public interface and implementation now both return `Promise<void>`, allowing consumers to await failures from blob download initiation. The default MIME type is now the standard `text/plain`.
 
-Evidence: `src/helpers/http.ts:9`, `src/helpers/http.ts:11`, `src/helpers/http.ts:34`.
+Evidence: `src/helpers/http.ts:9`, `src/helpers/http.ts:12`, `src/helpers/http.ts:35`; regression tests in `test/helpers/http.test.ts`.
 
-Declare `downloadText` as `Promise<void>` and use `text/plain` (optionally with a charset) as the default. Add a declaration-level usage test that awaits the public method.
+No further action is required for this finding.
 
 ### 10. [P2] `RegExp.find` and `findAll` do not honor sticky regular expressions
 

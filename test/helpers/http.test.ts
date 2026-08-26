@@ -1,7 +1,7 @@
 import { HttpError } from '@/utils/http-error';
 
 // Mock the extension methods on Blob and Response prototypes
-const blobDownloadMock = vi.fn();
+const blobDownloadMock = vi.fn(() => Promise.resolve());
 const responseDownloadMock = vi.fn();
 (globalThis.Blob.prototype as any).download = blobDownloadMock;
 (globalThis.Response.prototype as any).download = responseDownloadMock;
@@ -15,16 +15,15 @@ describe('BuiltinX.Http', () => {
   });
 
   describe('downloadText', () => {
-    it('should create a blob and call its download method', () => {
+    it('should create a text/plain blob and await its download method', async () => {
       const text = 'hello world';
       const filename = 'hello.txt';
-      const type = 'text/plain';
 
-      BuiltinX.Http.downloadText(text, filename, type);
+      await expect(BuiltinX.Http.downloadText(text, filename)).resolves.toBeUndefined();
 
-      // We can't easily inspect the created Blob, but we can verify `download` was called.
       expect(blobDownloadMock).toHaveBeenCalledWith(filename);
       expect(blobDownloadMock).toHaveBeenCalledTimes(1);
+      expect((blobDownloadMock.mock.contexts[0] as Blob).type).toBe('text/plain');
     });
   });
 
