@@ -11,10 +11,10 @@ describe('debounce (enhanced)', () => {
     vi.useRealTimers();
   });
 
-  test('should debounce (trailing only, default)', () => {
+  test('should debounce on the trailing edge when leading is disabled', () => {
     const fn = vi.fn();
 
-    const debounced = debounce(fn, {});
+    const debounced = debounce(fn, { leading: false });
 
     debounced(1);
     debounced(2);
@@ -34,6 +34,7 @@ describe('debounce (enhanced)', () => {
     const after = vi.fn();
 
     const debounced = debounce(fn, {
+      leading: false,
       beforeCallback: before,
       afterCallback: after
     });
@@ -86,11 +87,12 @@ describe('debounce (enhanced)', () => {
     expect(fn).not.toHaveBeenCalled();
   });
 
-  test('should execute immediately when immediate=true', () => {
+  test('should execute immediately when leading=true', () => {
     const fn = vi.fn();
 
     const debounced = debounce(fn, {
-      immediate: true
+      leading: true,
+      trailing: false,
     });
 
     debounced(1);
@@ -99,11 +101,12 @@ describe('debounce (enhanced)', () => {
     expect(fn).toHaveBeenCalledWith(1);
   });
 
-  test('should trigger trailing call when immediate=true and called again', () => {
+  test('should trigger trailing call when leading and trailing are true', () => {
     const fn = vi.fn();
 
     const debounced = debounce(fn, {
-      immediate: true
+      leading: true,
+      trailing: true,
     });
 
     debounced(1); // leading
@@ -121,6 +124,7 @@ describe('debounce (enhanced)', () => {
     const fn = vi.fn();
 
     const debounced = debounce(fn, {
+      leading: false,
       debounceMs: 100
     });
 
@@ -143,6 +147,7 @@ describe('debounce (enhanced)', () => {
     const fn = vi.fn();
 
     const debounced = debounce(fn, {
+      leading: false,
       beforeCallback: before,
       afterCallback: after
     });
@@ -159,7 +164,7 @@ describe('debounce (enhanced)', () => {
   test('should support multiple argument types (type safety)', () => {
     const fn = vi.fn<(a: number, b: string, c: boolean) => void>();
 
-    const debounced = debounce(fn, {});
+    const debounced = debounce(fn, { leading: false });
 
     debounced(1, 'x', true);
 
@@ -172,6 +177,7 @@ describe('debounce (enhanced)', () => {
     const fn = vi.fn();
 
     const debounced = debounce(fn, {
+      leading: false,
       debounceMs: 200
     });
 
@@ -182,6 +188,30 @@ describe('debounce (enhanced)', () => {
 
     vi.advanceTimersByTime(1);
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  test('should use leading and trailing by default', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, { debounceMs: 100 });
+
+    debounced(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(1);
+
+    debounced(2);
+    vi.advanceTimersByTime(100);
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(2);
+  });
+
+  test('should not call on either edge when both options are disabled', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, { leading: false, trailing: false });
+
+    debounced(1);
+    vi.advanceTimersByTime(1000);
+
+    expect(fn).not.toHaveBeenCalled();
   });
 
 });

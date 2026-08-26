@@ -11,6 +11,12 @@ describe("URLSearchParams.prototype.getInt", () => {
     expect(params.getInt("value")).toBe(8);
   });
 
+  it("uses the last value when the key occurs more than once", () => {
+    const params = new URLSearchParams("page=1&page=2");
+
+    expect(params.getInt("page")).toBe(2);
+  });
+
   it("returns the default value when the key is missing", () => {
     const params = new URLSearchParams();
 
@@ -41,6 +47,12 @@ describe("URLSearchParams.prototype.getBool", () => {
     const params = new URLSearchParams("enabled=yes");
 
     expect(params.getBool("enabled", true)).toBe(false);
+  });
+
+  it("uses the last value when the key occurs more than once", () => {
+    const params = new URLSearchParams("enabled=false&enabled=true");
+
+    expect(params.getBool("enabled")).toBe(true);
   });
 
   it("returns the default value when the key is missing", () => {

@@ -53,18 +53,18 @@ describe("Storage.prototype.setCache and getCache", () => {
     expect(localStorage.getItem("token")).toBeNull();
   });
 
-  it("returns null and removes invalid cache entries", () => {
+  it("returns null without removing non-cache entries", () => {
     localStorage.setItem("bad", "{not json");
 
     expect(localStorage.getCache("bad")).toBeNull();
-    expect(localStorage.getItem("bad")).toBeNull();
+    expect(localStorage.getItem("bad")).toBe("{not json");
   });
 
-  it("returns null and removes entries without a numeric expire field", () => {
+  it("returns null without removing entries without a numeric expire field", () => {
     localStorage.setItem("bad", JSON.stringify({ value: "x", expire: "tomorrow" }));
 
     expect(localStorage.getCache("bad")).toBeNull();
-    expect(localStorage.getItem("bad")).toBeNull();
+    expect(localStorage.getItem("bad")).toBe(JSON.stringify({ value: "x", expire: "tomorrow" }));
   });
 });
 
@@ -152,14 +152,14 @@ describe("Storage.prototype.cleanupExpired", () => {
     expect(localStorage.getCache("valid")).toBe("b");
   });
 
-  it("removes invalid entries during cleanup", () => {
+  it("preserves non-cache entries during cleanup", () => {
     localStorage.setItem("bad-json", "{not json");
     localStorage.setItem("bad-shape", JSON.stringify({ value: "x" }));
 
     localStorage.cleanupExpired();
 
-    expect(localStorage.getItem("bad-json")).toBeNull();
-    expect(localStorage.getItem("bad-shape")).toBeNull();
+    expect(localStorage.getItem("bad-json")).toBe("{not json");
+    expect(localStorage.getItem("bad-shape")).toBe(JSON.stringify({ value: "x" }));
   });
 });
 

@@ -120,7 +120,7 @@ describe("URL.prototype.setParamsFrom", () => {
   });
 });
 
-describe("URL.prototype.deleteParam and tryDeleteParam", () => {
+describe("URL.prototype.deleteParam", () => {
   it("deletes a parameter and returns the same instance", () => {
     const url = new URL("https://example.com/?a=1");
 
@@ -128,21 +128,11 @@ describe("URL.prototype.deleteParam and tryDeleteParam", () => {
     expect(url.searchParams.has("a")).toBe(false);
   });
 
-  it("deletes a parameter only when the effective value matches", () => {
+  it("deletes only matching values when a value is provided", () => {
     const url = new URL("https://example.com/?a=1&a=2");
 
-    expect(url.tryDeleteParam("a", "1")).toBe(false);
-    expect(url.searchParams.getAll("a")).toEqual(["1", "2"]);
-
-    expect(url.tryDeleteParam("a", "2")).toBe(true);
-    expect(url.searchParams.has("a")).toBe(false);
-  });
-
-  it("deletes a parameter when only the key is checked", () => {
-    const url = new URL("https://example.com/?a=1");
-
-    expect(url.tryDeleteParam("a")).toBe(true);
-    expect(url.searchParams.has("a")).toBe(false);
+    expect(url.deleteParam("a", "1")).toBe(url);
+    expect(url.searchParams.getAll("a")).toEqual(["2"]);
   });
 });
 
