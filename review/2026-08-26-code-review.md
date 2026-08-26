@@ -6,7 +6,7 @@ Reviewed every TypeScript file under `src/`, starting with package boundaries an
 
 Validation completed:
 
-- `pnpm test -- --run` — 28 test files and 564 tests passed.
+- `pnpm test -- --run` — 28 test files and 566 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -18,7 +18,7 @@ Validation completed:
 - Finding 5 is **fixed and verified**. `leading` and `trailing` are independent options, both defaulting to true, and regression coverage verifies their combined and disabled behavior.
 - The mutation-observer startup option is **refined and verified**. `callAtOnce` was renamed to `callOnStart` to distinguish startup invocation from debounce-edge behavior. The default remains true and the runtime behavior is unchanged.
 - Finding 6 is **fixed and verified**. `Lazy<T>` now caches nullish values as successful creation results and provides `reset()` to discard the cache without invoking the factory.
-- Finding 7 is **partially fixed and verified**. Construction, factory input, and arithmetic results now maintain the finite safe-integer-millisecond invariant; the string round-trip limitation remains.
+- Finding 7 is **fixed and verified**. Construction, factory input, and arithmetic results maintain the finite safe-integer-millisecond invariant, and `parse` supports the day-qualified string form produced by `toString`.
 
 ## Design summary
 
@@ -76,13 +76,13 @@ Evidence: `src/utils/lazy.ts:7`, `src/utils/lazy.ts:15`, `src/utils/lazy.ts:31`;
 
 No further action is required for this finding.
 
-### 7. [P1] `TimeSpan.toString()` is not parseable for values with days
+### 7. [Fixed] `TimeSpan.parse()` supports day-qualified string forms
 
-The constructor now requires finite safe-integer milliseconds, and all factory and arithmetic paths flow through that validation. However, the string form for a value with days, such as `1.0:0:0`, still cannot be read by `TimeSpan.parse`, whose grammar has no day component.
+`TimeSpan.parse()` now accepts both `hours:minutes:seconds` and `days.hours:minutes:seconds`, including the signed component format currently produced by `toString` for negative values.
 
-Evidence: `src/utils/time-span.ts:74`, `src/utils/time-span.ts:137`, `src/utils/time-span.ts:150`; validation regression tests in `test/utils/time-span.test.ts`.
+Evidence: `src/utils/time-span.ts:140`, `src/utils/time-span.ts:150`; regression tests in `test/utils/time-span.test.ts`.
 
-Make `parse` accept exactly the format produced by `toString` (including signed values if they are supported), and add round-trip tests.
+No further action is required for this finding.
 
 ### 8. [P1] `Timer.every` has no interval validation or prompt cancellation path
 

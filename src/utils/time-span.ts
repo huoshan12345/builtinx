@@ -132,17 +132,23 @@ export class TimeSpan {
     return new TimeSpan(result);
   }
 
-  static regDuration = /^(?:(\d+):)?(\d+):(\d+)$/;
+  static regDuration = /^(?:(-?\d+)\.)?(-?\d+):(-?\d+):(-?\d+)$/;
+
+  /**
+   * Parses a duration formatted as `hours:minutes:seconds` or
+   * `days.hours:minutes:seconds`.
+   */
   public static parse(str: string): TimeSpan {
     const match = this.regDuration.exec(str);
     if (!match) {
       throw new Error("Invalid format: " + str);
     }
 
-    const hours = parseInt(match[1] || '0');
-    const minutes = parseInt(match[2]);
-    const seconds = parseInt(match[3]);
-    return TimeSpan.from(0, hours, minutes, seconds);
+    const days = Number.parseInt(match[1] ?? '0', 10);
+    const hours = Number.parseInt(match[2], 10);
+    const minutes = Number.parseInt(match[3], 10);
+    const seconds = Number.parseInt(match[4], 10);
+    return TimeSpan.from(days, hours, minutes, seconds);
   }
 
   toString(): string {

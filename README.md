@@ -228,7 +228,7 @@ The main entry exports these utility classes and types:
 - `Stack<T>`: LIFO stack with `push`, `pop`, `peek`, `clear`, `size`, and iteration.
 - `Lazy<T>`: lazy value wrapper with `value`, `isValueCreated`, and `reset`. A `null` or `undefined` factory result still counts as created and remains cached until reset.
 - `StringBuilder`: chainable string accumulation.
-- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs.
+- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds`.
 - `Timer.every(timeSpanOrMs)`: async generator that yields forever at an interval.
 - `HttpError`: error type used by `BuiltinX.Http.request`.
 
