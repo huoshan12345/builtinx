@@ -128,32 +128,32 @@ declare global {
     swap(i: number, j: number): this;
 
     /**
-     * Returns whether any of the specified patterns matches any of the selected string values.
+     * Returns whether any selected string value contains any of the specified patterns.
      *
      * Returns false when `patterns` is empty.
      */
-    containsAnyInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    anyContainsAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
 
     /**
-     * Returns whether any of the specified patterns matches all of the selected string values.
+     * Returns whether any selected string value contains all of the specified patterns.
      *
-     * Returns false when `patterns` is empty.
+     * Returns false when the array is empty, and true when `patterns` is empty and the array is non-empty.
      */
-    containsAnyInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    anyContainsAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
 
     /**
-     * Returns whether all of the specified patterns match any of the selected string values.
+     * Returns whether all selected string values contain any of the specified patterns.
+     *
+     * Returns true when the array is empty, and false when `patterns` is empty and the array is non-empty.
+     */
+    allContainsAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+
+    /**
+     * Returns whether all selected string values contain all of the specified patterns.
      *
      * Returns true when `patterns` is empty.
      */
-    containsAllInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
-
-    /**
-     * Returns whether all of the specified patterns match all of the selected string values.
-     *
-     * Returns true when `patterns` is empty.
-     */
-    containsAllInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    allContainsAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
   }
 
   interface ArrayConstructor {
@@ -356,24 +356,24 @@ function swap<T>(this: T[], i: number, j: number): T[] {
   return this;
 };
 
-function containsAnyInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function anyContainsAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.some(x => x.contains(m)));
+  return values.some(value => patterns.some(pattern => value.contains(pattern)));
 };
 
-function containsAnyInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function anyContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.every(x => x.contains(m)));
+  return values.some(value => patterns.every(pattern => value.contains(pattern)));
 };
 
-function containsAllInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function allContainsAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.some(x => x.contains(m)));
+  return values.every(value => patterns.some(pattern => value.contains(pattern)));
 };
 
-function containsAllInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function allContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.every(x => x.contains(m)));
+  return values.every(value => patterns.every(pattern => value.contains(pattern)));
 };
 
 definePropertyIfAbsent(Array, 'cast', cast);
@@ -392,8 +392,8 @@ definePropertyIfAbsent(Array.prototype, 'count', count);
 definePropertyIfAbsent(Array.prototype, 'resize', resize);
 definePropertyIfAbsent(Array.prototype, 'replaceFrom', replaceFrom);
 definePropertyIfAbsent(Array.prototype, 'swap', swap);
-definePropertyIfAbsent(Array.prototype, 'containsAnyInAny', containsAnyInAny);
-definePropertyIfAbsent(Array.prototype, 'containsAnyInAll', containsAnyInAll);
-definePropertyIfAbsent(Array.prototype, 'containsAllInAny', containsAllInAny);
-definePropertyIfAbsent(Array.prototype, 'containsAllInAll', containsAllInAll);
+definePropertyIfAbsent(Array.prototype, 'anyContainsAny', anyContainsAny);
+definePropertyIfAbsent(Array.prototype, 'anyContainsAll', anyContainsAll);
+definePropertyIfAbsent(Array.prototype, 'allContainsAny', allContainsAny);
+definePropertyIfAbsent(Array.prototype, 'allContainsAll', allContainsAll);
 definePropertyIfAbsent(Array.prototype, 'remove', remove);

@@ -791,105 +791,54 @@ describe("Array.prototype pattern methods", () => {
   const values = ["apple pie", "banana split", "orange juice"];
   const selector = (x: string) => x;
 
-  describe("containsAnyInAny", () => {
-    it("should return true when at least one pattern exists in at least one item", () => {
-      expect(values.containsAnyInAny(["apple", "zzz"], selector)).toBe(true);
+  describe("anyContainsAny", () => {
+    it("returns true when one selected value contains one pattern", () => {
+      expect(values.anyContainsAny(["apple", "zzz"], selector)).toBe(true);
+      expect(values.anyContainsAny([/^banana/i], selector)).toBe(true);
     });
 
-    it("should return true when regex matches one item", () => {
-      expect(values.containsAnyInAny([/^banana/i], selector)).toBe(true);
-    });
-
-    it("should return false when no pattern matches any item", () => {
-      expect(values.containsAnyInAny(["grape", "melon"], selector)).toBe(false);
-    });
-
-    it("should return false for empty patterns", () => {
-      expect(values.containsAnyInAny([], selector)).toBe(false);
-    });
-
-    it("should return false for empty array", () => {
-      expect([].containsAnyInAny(["apple"], selector)).toBe(false);
+    it("returns false when the array or patterns are empty", () => {
+      expect(values.anyContainsAny([], selector)).toBe(false);
+      expect([].anyContainsAny(["apple"], selector)).toBe(false);
     });
   });
 
-  describe("containsAnyInAll", () => {
-    it("should return true when one pattern exists in every item", () => {
-      const arr = ["cat food", "cat toy", "cat bed"];
-      expect(arr.containsAnyInAll(["cat", "dog"], selector)).toBe(true);
+  describe("anyContainsAll", () => {
+    it("requires one selected value to contain every pattern", () => {
+      expect(values.anyContainsAll(["apple", "pie"], selector)).toBe(true);
+      expect(values.anyContainsAll(["apple", "banana"], selector)).toBe(false);
     });
 
-    it("should return true when regex exists in every item", () => {
-      const arr = ["abc1", "xyz1", "ttt1"];
-      expect(arr.containsAnyInAll([/\d/], selector)).toBe(true);
-    });
-
-    it("should return false when no single pattern exists in every item", () => {
-      expect(values.containsAnyInAll(["apple", "banana"], selector)).toBe(false);
-    });
-
-    it("should return false for empty patterns", () => {
-      expect(values.containsAnyInAll([], selector)).toBe(false);
-    });
-
-    it("should return true for empty array", () => {
-      expect([].containsAnyInAll(["apple"], selector)).toBe(true);
+    it("uses existential semantics for an empty pattern set", () => {
+      expect(values.anyContainsAll([], selector)).toBe(true);
+      expect([].anyContainsAll([], selector)).toBe(false);
     });
   });
 
-  describe("containsAllInAny", () => {
-    it("should return true when all patterns are covered across items", () => {
-      expect(
-        values.containsAllInAny(["apple", "banana", "orange"], selector)
-      ).toBe(true);
+  describe("allContainsAny", () => {
+    it("allows different selected values to contain different patterns", () => {
+      expect(values.allContainsAny(["apple", "banana", "orange"], selector)).toBe(true);
+      expect(values.allContainsAny(["apple", "banana"], selector)).toBe(false);
     });
 
-    it("should return true with mixed string and regex patterns", () => {
-      expect(
-        values.containsAllInAny(["apple", /^banana/i, /juice$/], selector)
-      ).toBe(true);
-    });
-
-    it("should return false when one pattern is missing", () => {
-      expect(
-        values.containsAllInAny(["apple", "banana", "grape"], selector)
-      ).toBe(false);
-    });
-
-    it("should return true for empty patterns", () => {
-      expect(values.containsAllInAny([], selector)).toBe(true);
-    });
-
-    it("should return false for empty array with non-empty patterns", () => {
-      expect([].containsAllInAny(["apple"], selector)).toBe(false);
+    it("uses universal semantics for an empty array", () => {
+      expect([].allContainsAny(["apple"], selector)).toBe(true);
+      expect(values.allContainsAny([], selector)).toBe(false);
     });
   });
 
-  describe("containsAllInAll", () => {
-    it("should return true when every pattern exists in every item", () => {
-      const arr = ["red big car", "red big bus", "red big bike"];
+  describe("allContainsAll", () => {
+    it("requires every selected value to contain every pattern", () => {
+      const allRedAndBig = ["red big car", "red big bus", "red big bike"];
+      const missingBig = ["red big car", "red car", "red big bike"];
 
-      expect(arr.containsAllInAll(["red", "big"], selector)).toBe(true);
+      expect(allRedAndBig.allContainsAll(["red", "big"], selector)).toBe(true);
+      expect(missingBig.allContainsAll(["red", "big"], selector)).toBe(false);
     });
 
-    it("should return true with regex patterns", () => {
-      const arr = ["A1X", "B1Y", "C1Z"];
-
-      expect(arr.containsAllInAll([/\d/], selector)).toBe(true);
-    });
-
-    it("should return false when one pattern is missing from one item", () => {
-      const arr = ["red big car", "red car", "red big bike"];
-
-      expect(arr.containsAllInAll(["red", "big"], selector)).toBe(false);
-    });
-
-    it("should return true for empty patterns", () => {
-      expect(values.containsAllInAll([], selector)).toBe(true);
-    });
-
-    it("should return true for empty array", () => {
-      expect([].containsAllInAll(["apple"], selector)).toBe(true);
+    it("returns true when either quantified set is empty", () => {
+      expect(values.allContainsAll([], selector)).toBe(true);
+      expect([].allContainsAll(["apple"], selector)).toBe(true);
     });
   });
 });
