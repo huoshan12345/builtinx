@@ -226,7 +226,7 @@ The main entry exports these utility classes and types:
 
 - `Queue<T>`: FIFO queue with `enqueue`, `dequeue`, `peek`, `clear`, `length`, and iteration.
 - `Stack<T>`: LIFO stack with `push`, `pop`, `peek`, `clear`, `size`, and iteration.
-- `Lazy<T>`: lazy value wrapper with `value` and `isValueCreated`.
+- `Lazy<T>`: lazy value wrapper with `value`, `isValueCreated`, and `reset`. A `null` or `undefined` factory result still counts as created and remains cached until reset.
 - `StringBuilder`: chainable string accumulation.
 - `TimeSpan`: duration factory and arithmetic helpers.
 - `Timer.every(timeSpanOrMs)`: async generator that yields forever at an interval.
