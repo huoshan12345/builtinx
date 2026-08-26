@@ -8,28 +8,44 @@ declare global {
      * Stores a cache entry with an expiration time.
      *
      * Nullish values are ignored and are not written to storage.
-     * Existing values may be evicted if storage is full.
+     * If storage is full, expired cache entries are cleaned up before retrying.
      */
     setCache<T>(key: string, value: T, expiration: TimeSpan): void;
 
     /**
      * Returns the cached value for the specified key.
      *
-     * Returns null when the key is missing, expired, or contains invalid cache data.
-     * Expired and invalid entries are removed from storage.
+     * Returns null when the key is missing, expired, or does not contain a cache entry.
+     * Expired cache entries are removed; unrecognized values are left unchanged.
      */
     getCache<T>(key: string): Nullable<T>;
 
     /**
+     * Returns and removes the unexpired cached value for the specified key.
+     *
+     * Returns null when the key is missing, expired, or does not contain a cache entry.
+     * Expired cache entries are removed; unrecognized values are left unchanged.
+     */
+    takeCache<T>(key: string): Nullable<T>;
+
+    /**
+     * Parses and returns the JSON value stored for the specified key.
+     *
+     * Returns null when the key is missing.
+     * @throws {SyntaxError} When the stored value is not valid JSON.
+     */
+    getJsonValue<T>(key: string): Nullable<T>;
+
+    /**
      * Returns the cached value for the specified key, or creates and stores one when absent.
      *
-     * The factory is only called when the current cache entry is missing, expired, or invalid.
+     * The factory is only called when the current cache entry is missing, expired, or unrecognized.
      * Nullish factory results are returned to the caller but are not stored.
      */
     getOrCreateCacheAsync<T>(key: string, factory: (key: string) => Awaitable<T>, expiration: TimeSpan): Promise<T>;
 
     /**
-     * Removes expired and invalid cache entries.
+     * Removes expired cache entries and leaves unrecognized values unchanged.
      */
     cleanupExpired(): void;
 
@@ -66,7 +82,6 @@ function cleanupExpired(this: Storage): void {
 
     const entry = parseEntry(str);
     if (!entry) {
-      keysToRemove.push(key);
       continue;
     }
 
@@ -92,26 +107,11 @@ function setCache<T>(this: Storage, key: string, value: T, expiration: TimeSpan)
   };
 
   const json = JSON.stringify(obj);
-  for (let i = 0; i < 10; i++) {
-    try {
-      this.setItem(key, json);
-      break;
-    } catch (e) {
-      if (e instanceof DOMException) {
-
-        if (i === 0) {
-          this.cleanupExpired(); // first try to cleanup expired items
-          continue;
-        }
-
-        const k = this.key(0);
-        if (k) {
-          this.removeItem(k);          
-          continue;
-        }
-      }
-      throw e;
-    }
+  try {
+    this.setItem(key, json);
+  } catch (e) {
+    this.cleanupExpired();
+    this.setItem(key, json);
   }
 };
 
@@ -122,7 +122,6 @@ function getCache<T>(this: Storage, key: string): Nullable<T> {
 
   const entry = parseEntry(str);
   if (!entry) {
-    this.removeItem(key);
     return null;
   }
 
@@ -133,6 +132,19 @@ function getCache<T>(this: Storage, key: string): Nullable<T> {
   }
   return entry.value as T;
 };
+
+function takeCache<T>(this: Storage, key: string): Nullable<T> {
+  const value = this.getCache<T>(key);
+  if (value != null) {
+    this.removeItem(key);
+  }
+  return value;
+}
+
+function getJsonValue<T>(this: Storage, key: string): Nullable<T> {
+  const value = this.getItem(key);
+  return value === null ? null : JSON.parse(value) as T;
+}
 
 async function getOrCreateCacheAsync<T>(this: Storage, key: string, factory: (key: string) => Awaitable<T>, expiration: TimeSpan) {
   let obj = this.getCache<T>(key);
@@ -155,5 +167,7 @@ function* keys(this: Storage): Iterable<string> {
 definePropertyIfAbsent(Storage.prototype, 'cleanupExpired', cleanupExpired);
 definePropertyIfAbsent(Storage.prototype, 'setCache', setCache);
 definePropertyIfAbsent(Storage.prototype, 'getCache', getCache);
+definePropertyIfAbsent(Storage.prototype, 'takeCache', takeCache);
+definePropertyIfAbsent(Storage.prototype, 'getJsonValue', getJsonValue);
 definePropertyIfAbsent(Storage.prototype, 'getOrCreateCacheAsync', getOrCreateCacheAsync);
 definePropertyIfAbsent(Storage.prototype, 'keys', keys);

@@ -6,9 +6,10 @@ export interface Http {
    * Creates a Blob from a string and initiates a download.
    * @param text The text content to download.
    * @param filename The name of the file to be saved.
-   * @param type The MIME type of the content. Defaults to 'plain/text'.
+   * @param type The MIME type of the content. Defaults to 'text/plain'.
+   * @returns A promise that resolves when the download is initiated.
    */
-  downloadText(text: string, filename: string, type?: string): void;
+  downloadText(text: string, filename: string, type?: string): Promise<void>;
 
   /**
    * Fetches a resource from a URL and initiates a download for it.
@@ -31,7 +32,7 @@ export interface Http {
 }
 
 export const Http: Http = {
-  downloadText(text: string, filename: string, type: string = 'plain/text'): Promise<void> {
+  downloadText(text: string, filename: string, type: string = 'text/plain'): Promise<void> {
     const blob = new Blob([text], { type: type });
     return blob.download(filename);
   },

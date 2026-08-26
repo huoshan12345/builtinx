@@ -39,7 +39,9 @@ export class DebounceMutationCallbackOptions {
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
   /** If true, triggers the callback on the leading edge of the debounce. */
-  immediate: boolean = false;
+  leading: boolean = true;
+  /** If true, triggers the callback on the trailing edge of the debounce. */
+  trailing: boolean = true;
   /** List of predicates to determine which mutations should be excluded (ignored). */
   exclusions: Predicate<MutationRecord>[] = [];
 
@@ -74,9 +76,11 @@ export class MutationObserverOptions implements MutationObserverInit {
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
   /** If true, triggers the callback on the leading edge of the debounce. */
-  immediate: boolean = true;
-  /** If true, executes the callback once immediately after observation starts. */
-  callAtOnce: boolean = true;
+  leading: boolean = true;
+  /** If true, triggers the callback on the trailing edge of the debounce. */
+  trailing: boolean = true;
+  /** If true, invokes the callback once with an empty mutation list before observation starts. */
+  callOnStart: boolean = true;
   /** Optional callback to be executed before the main callback. */
   beforeCallback?: NodeMutationCallback;
   /** Optional callback to be executed after the main callback. */

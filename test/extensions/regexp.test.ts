@@ -31,22 +31,22 @@ describe("RegExp.prototype.find", () => {
     expect(result!.index).toBe(2);
   });
 
-  it("restores lastIndex to zero after matching on global regex", () => {
+  it("restores the original lastIndex after matching on global regex", () => {
     const regex = /ab/g;
     regex.lastIndex = 5;
 
     regex.find("xxabyyab");
 
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(5);
   });
 
-  it("restores lastIndex to zero when no match is found", () => {
+  it("restores the original lastIndex when no match is found", () => {
     const regex = /ab/g;
     regex.lastIndex = 5;
 
     regex.find("xxxx");
 
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(5);
   });
 
   it("supports capturing groups", () => {
@@ -66,13 +66,23 @@ describe("RegExp.prototype.find", () => {
     expect(result!.index).toBe(2);
   });
 
-  it("does not modify lastIndex of non-global regex", () => {
+  it("restores the original lastIndex of non-global regex", () => {
     const regex = /ab/;
     regex.lastIndex = 123;
 
     regex.find("xxabyy");
 
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(123);
+  });
+
+  it("searches sticky patterns from their current lastIndex", () => {
+    const regex = /ab/y;
+    regex.lastIndex = 2;
+
+    const result = regex.find("xxabyyab");
+
+    expect(result?.index).toBe(2);
+    expect(regex.lastIndex).toBe(2);
   });
 });
 
@@ -119,14 +129,14 @@ describe("RegExp.prototype.findAll", () => {
     expect(result[1][1]).toBe("b");
   });
 
-  it("resets lastIndex for global regex after execution", () => {
+  it("restores the original lastIndex for global regex after execution", () => {
     const regex = /ab/g;
 
     regex.lastIndex = 99;
 
     regex.findAll("abxxab");
 
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(99);
   });
 
   it("does not mutate lastIndex of non-global regex", () => {
@@ -154,5 +164,15 @@ describe("RegExp.prototype.findAll", () => {
     expect(result).toHaveLength(2);
     expect(result[0][0]).toBe("猫");
     expect(result[1][0]).toBe("狗");
+  });
+
+  it("preserves sticky semantics while adding global", () => {
+    const regex = /ab/y;
+    regex.lastIndex = 2;
+
+    const result = regex.findAll("xxababyyab");
+
+    expect(result.map(match => match.index)).toEqual([2, 4]);
+    expect(regex.lastIndex).toBe(2);
   });
 });

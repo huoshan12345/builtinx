@@ -19,12 +19,12 @@ describe("String.prototype.contains", () => {
     expect("hello world".contains(/mars/)).toBe(false);
   });
 
-  it("resets lastIndex when regular expression is global", () => {
+  it("restores lastIndex when regular expression is global", () => {
     const regex = /wo.ld/g;
     regex.lastIndex = 999;
 
     expect("hello world".contains(regex)).toBe(true);
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(999);
   });
 });
 
@@ -45,12 +45,12 @@ describe("String.prototype.matches", () => {
     expect("hello".matches(/xyz/)).toBe(false);
   });
 
-  it("resets lastIndex when regular expression is global", () => {
+  it("restores lastIndex when regular expression is global", () => {
     const regex = /ell/g;
     regex.lastIndex = 123;
 
     expect("hello".matches(regex)).toBe(true);
-    expect(regex.lastIndex).toBe(0);
+    expect(regex.lastIndex).toBe(123);
   });
 });
 

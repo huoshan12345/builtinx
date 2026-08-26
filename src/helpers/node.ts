@@ -18,7 +18,8 @@ export const Node: Node = {
       afterCallback: opts.afterCallback,
       onSkipped: opts.onSkipped,
       debounceMs: opts.debounceMs,
-      immediate: opts.immediate,
+      leading: opts.leading,
+      trailing: opts.trailing,
       shouldSkip: records => {
         const filtered = records.filter(m => !opts.exclusions.some(x => x(m)));
         records.replaceFrom(filtered); // Update the original array with the filtered records

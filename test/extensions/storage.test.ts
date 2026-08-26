@@ -53,18 +53,81 @@ describe("Storage.prototype.setCache and getCache", () => {
     expect(localStorage.getItem("token")).toBeNull();
   });
 
-  it("returns null and removes invalid cache entries", () => {
+  it("returns null without removing non-cache entries", () => {
     localStorage.setItem("bad", "{not json");
 
     expect(localStorage.getCache("bad")).toBeNull();
-    expect(localStorage.getItem("bad")).toBeNull();
+    expect(localStorage.getItem("bad")).toBe("{not json");
   });
 
-  it("returns null and removes entries without a numeric expire field", () => {
+  it("returns null without removing entries without a numeric expire field", () => {
     localStorage.setItem("bad", JSON.stringify({ value: "x", expire: "tomorrow" }));
 
     expect(localStorage.getCache("bad")).toBeNull();
-    expect(localStorage.getItem("bad")).toBeNull();
+    expect(localStorage.getItem("bad")).toBe(JSON.stringify({ value: "x", expire: "tomorrow" }));
+  });
+});
+
+describe("Storage.prototype.takeCache", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns and removes a cached value", () => {
+    localStorage.setCache("token", "abc", TimeSpan.fromMinutes(5));
+
+    expect(localStorage.takeCache<string>("token")).toBe("abc");
+    expect(localStorage.getItem("token")).toBeNull();
+  });
+
+  it("returns and removes falsy cached values", () => {
+    localStorage.setCache("zero", 0, TimeSpan.fromMinutes(5));
+    localStorage.setCache("false", false, TimeSpan.fromMinutes(5));
+    localStorage.setCache("empty", "", TimeSpan.fromMinutes(5));
+
+    expect(localStorage.takeCache<number>("zero")).toBe(0);
+    expect(localStorage.takeCache<boolean>("false")).toBe(false);
+    expect(localStorage.takeCache<string>("empty")).toBe("");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("removes expired entries but preserves unrecognized values", () => {
+    localStorage.setCache("expired", "abc", TimeSpan.fromMilliseconds(1));
+    localStorage.setItem("foreign", "{not json");
+    vi.advanceTimersByTime(2);
+
+    expect(localStorage.takeCache("expired")).toBeNull();
+    expect(localStorage.getItem("expired")).toBeNull();
+    expect(localStorage.takeCache("foreign")).toBeNull();
+    expect(localStorage.getItem("foreign")).toBe("{not json");
+  });
+});
+
+describe("Storage.prototype.getJsonValue", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns a parsed JSON value", () => {
+    localStorage.setItem("settings", JSON.stringify({ theme: "dark" }));
+
+    expect(localStorage.getJsonValue<{ theme: string }>("settings")).toEqual({ theme: "dark" });
+  });
+
+  it("returns null when the key is missing", () => {
+    expect(localStorage.getJsonValue("missing")).toBeNull();
+  });
+
+  it("throws when the stored value is invalid JSON", () => {
+    localStorage.setItem("invalid", "not json");
+
+    expect(() => localStorage.getJsonValue("invalid")).toThrow(SyntaxError);
   });
 });
 
@@ -152,14 +215,14 @@ describe("Storage.prototype.cleanupExpired", () => {
     expect(localStorage.getCache("valid")).toBe("b");
   });
 
-  it("removes invalid entries during cleanup", () => {
+  it("preserves non-cache entries during cleanup", () => {
     localStorage.setItem("bad-json", "{not json");
     localStorage.setItem("bad-shape", JSON.stringify({ value: "x" }));
 
     localStorage.cleanupExpired();
 
-    expect(localStorage.getItem("bad-json")).toBeNull();
-    expect(localStorage.getItem("bad-shape")).toBeNull();
+    expect(localStorage.getItem("bad-json")).toBe("{not json");
+    expect(localStorage.getItem("bad-shape")).toBe(JSON.stringify({ value: "x" }));
   });
 });
 

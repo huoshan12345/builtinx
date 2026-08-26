@@ -14,8 +14,9 @@ describe('MutationObserverOptions', () => {
     expect(options.subtree).toBe(true);
 
     expect(options.debounceMs).toBe(1000);
-    expect(options.immediate).toBe(true);
-    expect(options.callAtOnce).toBe(true);
+    expect(options.leading).toBe(true);
+    expect(options.trailing).toBe(true);
+    expect(options.callOnStart).toBe(true);
 
     expect(options.resolvedExclusions).toEqual([]);
   });
@@ -73,15 +74,15 @@ describe('MutationObserverOptions', () => {
   test('should merge static default with constructor options', () => {
     MutationObserverOptions.default = {
       debounceMs: 500,
-      immediate: false
+      leading: false
     };
 
     const options = new MutationObserverOptions({
-      immediate: true
+      leading: true
     });
 
     expect(options.debounceMs).toBe(500);   // 来自 default
-    expect(options.immediate).toBe(true);   // 被 constructor 覆盖
+    expect(options.leading).toBe(true);   // 被 constructor 覆盖
   });
 
   test('should accumulate static default', () => {
@@ -90,20 +91,20 @@ describe('MutationObserverOptions', () => {
     };
 
     MutationObserverOptions.default = {
-      immediate: false
+      leading: false
     };
 
     const options = new MutationObserverOptions();
 
     expect(options.debounceMs).toBe(500);
-    expect(options.immediate).toBe(false);
+    expect(options.leading).toBe(false);
   });
 
   test('toNativeInit should only include MutationObserverInit fields', () => {
     const options = new MutationObserverOptions({
       attributes: true,
       debounceMs: 2000,
-      immediate: false
+      leading: false
     });
 
     const native = options.toNativeInit();

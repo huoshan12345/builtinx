@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
+const dir = import.meta.dirname;
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': resolve(dir, './src'),
     },
   },
   plugins: [
@@ -12,8 +13,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        dom: resolve(__dirname, 'src/dom.ts')
+        index: resolve(dir, 'src/index.ts'),
+        dom: resolve(dir, 'src/dom.ts')
       },
       formats: ['es']
     },
