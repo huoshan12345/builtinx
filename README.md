@@ -75,7 +75,7 @@ Static helpers:
 Instance helpers:
 
 - Indexing and mutation: `hasIndex`, `removeAt`, `remove`, `resize`, `replaceFrom`, `swap`, `append`, `insert`, `prepend`.
-- Selection: `first`, `last`, `sample`, `throwIfEmpty`.
+- Selection: `first(predicate?)`, `last(predicate?)`, `sample`, `throwIfEmpty`.
 - Aggregation: `distinct`, `groupBy`, `countBy`, `count`.
 - Pattern matching across selected strings: `anyContainsAny`, `anyContainsAll`, `allContainsAny`, `allContainsAll`.
 - RegExp/extractor arrays: `rewrite`, `extract`, `matchesAny`, `containsAny`.

@@ -384,8 +384,29 @@ describe("Array.prototype.first", () => {
     expect(["x"].first()).toBe("x");
   });
 
+  it("returns the first element that satisfies the predicate", () => {
+    const values = [1, 2, 3, 4];
+    const predicate = vi.fn((value: number, index: number, array: readonly number[]) => {
+      expect(array).toBe(values);
+      return value % 2 === 0 && index > 0;
+    });
+
+    expect(values.first(predicate)).toBe(2);
+    expect(predicate).toHaveBeenCalledTimes(2);
+    expect(predicate).toHaveBeenNthCalledWith(1, 1, 0, values);
+    expect(predicate).toHaveBeenNthCalledWith(2, 2, 1, values);
+  });
+
+  it("treats a null predicate as no predicate", () => {
+    expect([1, 2, 3].first(null)).toBe(1);
+  });
+
   it("throws for empty arrays", () => {
     expect(() => [].first()).toThrow(RangeError);
+  });
+
+  it("throws when no element satisfies the predicate", () => {
+    expect(() => [1, 2, 3].first(value => value > 3)).toThrow(RangeError);
   });
 
   it("does not modify original array", () => {
@@ -406,8 +427,30 @@ describe("Array.prototype.last", () => {
     expect(["x"].last()).toBe("x");
   });
 
+  it("returns the last element that satisfies the predicate", () => {
+    const values = [1, 2, 3, 4];
+    const predicate = vi.fn((value: number, index: number, array: readonly number[]) => {
+      expect(array).toBe(values);
+      return value <= 2;
+    });
+
+    expect(values.last(predicate)).toBe(2);
+    expect(predicate).toHaveBeenCalledTimes(3);
+    expect(predicate).toHaveBeenNthCalledWith(1, 4, 3, values);
+    expect(predicate).toHaveBeenNthCalledWith(2, 3, 2, values);
+    expect(predicate).toHaveBeenNthCalledWith(3, 2, 1, values);
+  });
+
+  it("treats a null predicate as no predicate", () => {
+    expect([1, 2, 3].last(null)).toBe(3);
+  });
+
   it("throws for empty arrays", () => {
     expect(() => [].last()).toThrow(RangeError);
+  });
+
+  it("throws when no element satisfies the predicate", () => {
+    expect(() => [1, 2, 3].last(value => value > 3)).toThrow(RangeError);
   });
 
   it("does not modify original array", () => {

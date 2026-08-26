@@ -49,18 +49,18 @@ declare global {
     sample(): T | undefined;
 
     /**
-     * Returns the first element of the array.
+     * Returns the first element of the array that satisfies an optional predicate.
      *
-     * @throws {RangeError} When the array is empty.
+     * @throws {RangeError} When the array is empty or no element satisfies the predicate.
      */
-    first(): T;
+    first(predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T;
 
     /**
-     * Returns the last element of the array.
+     * Returns the last element of the array that satisfies an optional predicate.
      *
-     * @throws {RangeError} When the array is empty.
+     * @throws {RangeError} When the array is empty or no element satisfies the predicate.
      */
-    last(): T;
+    last(predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T;
 
     /**
      * Returns a new array containing distinct elements.
@@ -260,14 +260,36 @@ function sample<T>(this: T[]): T | undefined {
   return this[index];
 };
 
-function first<T>(this: T[]): T {
-  this.throwIfEmpty();
-  return this[0];
+function first<T>(this: T[], predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T {
+  if (predicate == null) {
+    this.throwIfEmpty();
+    return this[0];
+  }
+
+  for (let index = 0; index < this.length; index++) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  throw new RangeError("No element satisfies the predicate.");
 }
 
-function last<T>(this: T[]): T {
-  this.throwIfEmpty();
-  return this[this.length - 1];
+function last<T>(this: T[], predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T {
+  if (predicate == null) {
+    this.throwIfEmpty();
+    return this[this.length - 1];
+  }
+
+  for (let index = this.length - 1; index >= 0; index--) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  throw new RangeError("No element satisfies the predicate.");
 };
 
 function distinct<T>(this: T[]): T[] {
