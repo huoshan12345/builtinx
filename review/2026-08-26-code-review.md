@@ -2,11 +2,11 @@
 
 ## Scope and validation
 
-Reviewed every TypeScript file under `src/`, starting with package boundaries and public APIs, then examining each implementation. No production code was changed.
+Reviewed every TypeScript file under `src/`, starting with package boundaries and public APIs, then examining each implementation. This report also records the verification of follow-up production changes requested by the owner.
 
 Validation completed:
 
-- `pnpm test -- --run` — 28 test files and 564 tests passed.
+- `pnpm test -- --run` — 30 test files and 588 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -18,7 +18,11 @@ Validation completed:
 - Finding 5 is **fixed and verified**. `leading` and `trailing` are independent options, both defaulting to true, and regression coverage verifies their combined and disabled behavior.
 - The mutation-observer startup option is **refined and verified**. `callAtOnce` was renamed to `callOnStart` to distinguish startup invocation from debounce-edge behavior. The default remains true and the runtime behavior is unchanged.
 - Finding 6 is **fixed and verified**. `Lazy<T>` now caches nullish values as successful creation results and provides `reset()` to discard the cache without invoking the factory.
-- Finding 7 is **partially fixed and verified**. Construction, factory input, and arithmetic results now maintain the finite safe-integer-millisecond invariant; the string round-trip limitation remains.
+- Finding 7 is **fixed and verified**. Construction, factory input, and arithmetic results maintain the finite safe-integer-millisecond invariant, and `parse` supports the day-qualified string form produced by `toString`.
+- Finding 8 is **fixed and verified**. `Timer.every` validates its interval and accepts an optional `AbortSignal` that completes the generator promptly during a pending wait.
+- Finding 9 is **fixed and verified**. `Http.downloadText` now exposes its Promise return type and defaults to the standard `text/plain` MIME type.
+- Finding 10 is **fixed and verified**. Non-sticky `find` and `findAll` retain their from-the-start search contract, while sticky (`y`) expressions begin at their current `lastIndex` and preserve sticky matching semantics. Both methods restore the caller's original `lastIndex` afterward.
+- Finding 11 is **fixed and verified**. Storage API documentation now states that only expired cache entries are removed and unrecognized values are preserved.
 
 ## Design summary
 
@@ -76,42 +80,42 @@ Evidence: `src/utils/lazy.ts:7`, `src/utils/lazy.ts:15`, `src/utils/lazy.ts:31`;
 
 No further action is required for this finding.
 
-### 7. [P1] `TimeSpan.toString()` is not parseable for values with days
+### 7. [Fixed] `TimeSpan.parse()` supports day-qualified string forms
 
-The constructor now requires finite safe-integer milliseconds, and all factory and arithmetic paths flow through that validation. However, the string form for a value with days, such as `1.0:0:0`, still cannot be read by `TimeSpan.parse`, whose grammar has no day component.
+`TimeSpan.parse()` now accepts both `hours:minutes:seconds` and `days.hours:minutes:seconds`, including the signed component format currently produced by `toString` for negative values.
 
-Evidence: `src/utils/time-span.ts:74`, `src/utils/time-span.ts:137`, `src/utils/time-span.ts:150`; validation regression tests in `test/utils/time-span.test.ts`.
+Evidence: `src/utils/time-span.ts:140`, `src/utils/time-span.ts:150`; regression tests in `test/utils/time-span.test.ts`.
 
-Make `parse` accept exactly the format produced by `toString` (including signed values if they are supported), and add round-trip tests.
+No further action is required for this finding.
 
-### 8. [P1] `Timer.every` has no interval validation or prompt cancellation path
+### 8. [Fixed] `Timer.every` validates intervals and supports cancellation
 
-`Timer.every` accepts any `number` or `TimeSpan` and passes it directly to `setTimeout`. Negative, `NaN`, and invalid `TimeSpan` values become effectively zero-delay loops in common runtimes, allowing a consumer to create an unbounded hot loop. The infinite generator also has no `AbortSignal` or cancellation-aware delay, so an externally requested stop cannot interrupt a pending long interval.
+`Timer.every` now rejects non-finite, negative, and platform-overflowing intervals before creating a timer. Its optional `AbortSignal` clears a pending timer and completes the async generator without yielding again.
 
-Evidence: `src/utils/timer.ts:4`.
+Evidence: `src/utils/timer.ts:3`, `src/utils/timer.ts:34`; regression tests in `test/utils/timer.test.ts`.
 
-Reject non-finite or negative intervals before starting the generator. Add an optional `AbortSignal` and use a delay that reacts to abort so the timer's lifecycle is explicit and independently cancellable.
+No further action is required for this finding.
 
-### 9. [P2] `Http.downloadText` exposes the wrong TypeScript contract and default media type
+### 9. [Fixed] `Http.downloadText` exposes its Promise contract and standard media type
 
-The public interface says `downloadText` returns `void`, while the implementation returns a `Promise<void>`. Consumers therefore cannot await the declared API even though the operation may reject while creating or downloading the blob. Its documented and implemented default MIME type is `plain/text`; the standard type for plain text is `text/plain`.
+The public interface and implementation now both return `Promise<void>`, allowing consumers to await failures from blob download initiation. The default MIME type is now the standard `text/plain`.
 
-Evidence: `src/helpers/http.ts:9`, `src/helpers/http.ts:11`, `src/helpers/http.ts:34`.
+Evidence: `src/helpers/http.ts:9`, `src/helpers/http.ts:12`, `src/helpers/http.ts:35`; regression tests in `test/helpers/http.test.ts`.
 
-Declare `downloadText` as `Promise<void>` and use `text/plain` (optionally with a charset) as the default. Add a declaration-level usage test that awaits the public method.
+No further action is required for this finding.
 
-### 10. [P2] `RegExp.find` and `findAll` do not honor sticky regular expressions
+### 10. [Fixed] `RegExp.find` and `findAll` support sticky regular expressions
 
-Both methods promise to find matches in the input, but reset `lastIndex` to zero. A sticky regex such as `/id/y` therefore fails to find `"xxid"`, and `findAll` clones a non-global sticky expression as `/id/gy`, which still only matches at the current index. This silently produces no matches instead of either searching the input or preserving sticky semantics.
+For non-sticky expressions, the helpers are from-the-start search operations: they set the working expression's `lastIndex` to zero and restore its prior value afterward. Sticky (`y`) expressions instead begin at their current `lastIndex`; `findAll` adds `g` only when necessary and retains `y`. This preserves `/id/y` and `/id/gy` cursor semantics while still restoring the caller's expression state after the operation.
 
-Evidence: `src/extensions/regexp.ts:10`, `src/extensions/regexp.ts:20`, `src/extensions/regexp.ts:27`.
+Evidence: `src/extensions/regexp.ts:10`, `src/extensions/regexp.ts:17`, `src/extensions/regexp.ts:31`; regression tests in `test/extensions/regexp.test.ts` and `test/extensions/string.test.ts`.
 
-Decide whether these helpers are searches or cursor-based operations. For search semantics, reject or normalize away `y` when cloning and avoid relying on a sticky original. For cursor semantics, preserve and document `lastIndex` instead of resetting it. Add sticky-regex tests for both methods.
+No further action is required for this finding.
 
-### 11. [P2] Storage documentation still says invalid entries are removed
+### 11. [Fixed] Storage documentation reflects preservation of unrecognized values
 
-The follow-up implementation intentionally preserves values that cannot be parsed as cache entries, but the public comments for `getCache` and `cleanupExpired` still say that invalid entries are removed. Callers can therefore make an incorrect retention and cleanup decision from the declared API.
+The public comments now state that `getCache` and `cleanupExpired` preserve values that are not recognized as cache entries, while expired cache entries are removed. The cache-write documentation also accurately describes expiration cleanup as the quota-recovery step.
 
-Evidence: `src/extensions/storage.ts:18`, `src/extensions/storage.ts:32`, `src/extensions/storage.ts:122`.
+Evidence: `src/extensions/storage.ts:8`, `src/extensions/storage.ts:15`, `src/extensions/storage.ts:31`.
 
-Update the comments to say that expired cache entries are removed, while unrecognized values are preserved.
+No further action is required for this finding.

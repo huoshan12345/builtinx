@@ -17,7 +17,7 @@ permissions:
 
 env:
   DOTNET_NOLOGO: 1
-  IS_PUSH_DEFAULT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+  IS_MAIN_PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
 jobs:
   changes:
@@ -84,7 +84,7 @@ jobs:
         run: pnpm test
 
       - name: Publish with pnpm
-        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        if: ${{ env.IS_MAIN_PUSH == 'true' }}
         run: |
           if npm view "${{ env.NAME }}@${{ env.VERSION }}" version > /dev/null 2>&1; then
             echo "Version ${{ env.VERSION }} already exists on npm. Skipping publish."
@@ -95,7 +95,7 @@ jobs:
           fi
 
       - name: Create Tag
-        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        if: ${{ env.IS_MAIN_PUSH == 'true' }}
         uses: huoshan12345/update-tag@v1
         with:
           tag_name: ${{ env.VERSION }}
@@ -104,7 +104,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
       - name: Create Release
-        if: ${{ env.IS_PUSH_DEFAULT == 'true' }}
+        if: ${{ env.IS_MAIN_PUSH == 'true' }}
         uses: ncipollo/release-action@v1
         with:
           name: ${{ env.VERSION }}

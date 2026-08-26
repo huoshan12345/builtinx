@@ -24,4 +24,22 @@ describe('TimeSpan validation', () => {
     expect(() => TimeSpan.maxValue.add(TimeSpan.fromMilliseconds(1))).toThrow(RangeError);
     expect(() => TimeSpan.minValue.subtract(TimeSpan.fromMilliseconds(1))).toThrow(RangeError);
   });
+
+  it('parses the days component', () => {
+    const timeSpan = TimeSpan.parse('1.2:3:4');
+
+    expect(timeSpan.totalMilliseconds).toBe(
+      TimeSpan.from(1, 2, 3, 4).totalMilliseconds,
+    );
+  });
+
+  it('round-trips string forms with positive and negative days', () => {
+    for (const timeSpan of [
+      TimeSpan.from(1, 2, 3, 4),
+      TimeSpan.from(-1, -2, -3, -4),
+    ]) {
+      expect(TimeSpan.parse(timeSpan.toString()).totalMilliseconds)
+        .toBe(timeSpan.totalMilliseconds);
+    }
+  });
 });

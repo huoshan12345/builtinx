@@ -74,10 +74,10 @@ Static helpers:
 
 Instance helpers:
 
-- Indexing and mutation: `hasIndex`, `removeAt`, `remove`, `resize`, `replaceFrom`, `swap`, `append`.
-- Selection: `first`, `last`, `sample`, `throwIfEmpty`.
+- Indexing and mutation: `hasIndex`, `removeAt`, `remove`, `resize`, `replaceFrom`, `swap`, `append`, `insert`, `prepend`.
+- Selection: `first(predicate?)`, `firstOrNull(predicate?)`, `last(predicate?)`, `lastOrNull(predicate?)`, `sample`, `throwIfEmpty`.
 - Aggregation: `distinct`, `groupBy`, `countBy`, `count`.
-- Pattern matching across selected strings: `containsAnyInAny`, `containsAnyInAll`, `containsAllInAny`, `containsAllInAll`.
+- Pattern matching across selected strings: `anyContainsAny`, `anyContainsAll`, `allContainsAny`, `allContainsAll`.
 - RegExp/extractor arrays: `rewrite`, `extract`, `matchesAny`, `containsAny`.
 
 ```ts
@@ -100,14 +100,18 @@ String helpers:
 
 RegExp helpers:
 
-- `find(input)` returns the first match and resets `lastIndex`.
-- `findAll(input)` returns all matches and protects against zero-length-match loops.
+- `find(input)` returns the first match from the beginning of the input and restores `lastIndex` afterward. Sticky (`y`) patterns instead match at their current `lastIndex`.
+- `findAll(input)` returns all matches from the beginning of the input, restores `lastIndex` afterward, and protects against zero-length-match loops. Sticky (`y`) patterns begin at their current `lastIndex` and retain sticky matching semantics.
 
 ```ts
 "foo/bar/baz".skipUntil("/");       // "bar/baz"
 "--hello--".trimChars("-");         // "hello"
 /\d+/.find("id=42")?.[0];           // "42"
 ```
+
+### Set Helpers
+
+- `Set.some(predicate)` returns whether any value satisfies a predicate and stops after the first match.
 
 ### URL and URLSearchParams
 
@@ -188,6 +192,8 @@ const observer = document.body.observe(
 
 - `Storage.setCache(key, value, expiration)`.
 - `Storage.getCache(key)`.
+- `Storage.takeCache(key)`.
+- `Storage.getJsonValue(key)`.
 - `Storage.getOrCreateCacheAsync(key, factory, expiration)`.
 - `Storage.cleanupExpired()`.
 - `Storage.keys()`.
@@ -196,7 +202,8 @@ const observer = document.body.observe(
 import { TimeSpan } from "builtinx";
 
 localStorage.setCache("profile", { name: "Ada" }, TimeSpan.fromMinutes(10));
-const profile = localStorage.getCache<{ name: string }>("profile");
+const profile = localStorage.takeCache<{ name: string }>("profile");
+const settings = localStorage.getJsonValue<{ theme: string }>("settings");
 ```
 
 ## Helper Namespace
@@ -209,7 +216,7 @@ Available helpers include:
 - `BuiltinX.Clipboard`: `copy`.
 - `BuiltinX.Element`: HTML tag name list.
 - `BuiltinX.FileInfo`: filename splitting, extension handling, illegal-character replacement, compression-extension detection.
-- `BuiltinX.Http`: `downloadText`, `download`, `request`.
+- `BuiltinX.Http`: `downloadText`, `download`, `request`. `downloadText` returns a promise and defaults to `text/plain`.
 - `BuiltinX.Node`: debounced mutation callback helper.
 - `BuiltinX.Type`: precise runtime type names and common type guards.
 - `BuiltinX.debounce`: general debouncing utility.
@@ -228,8 +235,8 @@ The main entry exports these utility classes and types:
 - `Stack<T>`: LIFO stack with `push`, `pop`, `peek`, `clear`, `size`, and iteration.
 - `Lazy<T>`: lazy value wrapper with `value`, `isValueCreated`, and `reset`. A `null` or `undefined` factory result still counts as created and remains cached until reset.
 - `StringBuilder`: chainable string accumulation.
-- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs.
-- `Timer.every(timeSpanOrMs)`: async generator that yields forever at an interval.
+- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds`.
+- `Timer.every(timeSpanOrMs, signal?)`: async generator that yields at an interval until it is closed or the optional `AbortSignal` aborts.
 - `HttpError`: error type used by `BuiltinX.Http.request`.
 
 ```ts

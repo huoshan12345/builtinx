@@ -147,6 +147,52 @@ describe("Array.prototype.hasIndex", () => {
   });
 });
 
+describe("Array.prototype.insert", () => {
+  it("inserts at the beginning, middle, and end", () => {
+    const beginning = [2, 3];
+    const middle = [1, 3];
+    const end = [1, 2];
+    const empty: number[] = [];
+
+    expect(beginning.insert(0, 1)).toBe(beginning);
+    middle.insert(1, 2);
+    end.insert(end.length, 3);
+    empty.insert(0, 1);
+
+    expect(beginning).toEqual([1, 2, 3]);
+    expect(middle).toEqual([1, 2, 3]);
+    expect(end).toEqual([1, 2, 3]);
+    expect(empty).toEqual([1]);
+  });
+
+  it("supports negative indexes using splice semantics", () => {
+    const values = [1, 2, 3];
+
+    values.insert(-1, 9);
+
+    expect(values).toEqual([1, 2, 9, 3]);
+  });
+
+  it("does nothing for out-of-range indexes", () => {
+    const values = [1, 2];
+
+    values.insert(3, 3);
+    values.insert(-3, 0);
+    values.insert(1.5, 9);
+
+    expect(values).toEqual([1, 2]);
+  });
+});
+
+describe("Array.prototype.prepend", () => {
+  it("inserts an item at the beginning and returns the array", () => {
+    const values = [2, 3];
+
+    expect(values.prepend(1)).toBe(values);
+    expect(values).toEqual([1, 2, 3]);
+  });
+});
+
 describe("Array.prototype.removeAt", () => {
   it("removes and returns item by positive index", () => {
     const arr = ["a", "b", "c"];
@@ -338,8 +384,29 @@ describe("Array.prototype.first", () => {
     expect(["x"].first()).toBe("x");
   });
 
+  it("returns the first element that satisfies the predicate", () => {
+    const values = [1, 2, 3, 4];
+    const predicate = vi.fn((value: number, index: number, array: readonly number[]) => {
+      expect(array).toBe(values);
+      return value % 2 === 0 && index > 0;
+    });
+
+    expect(values.first(predicate)).toBe(2);
+    expect(predicate).toHaveBeenCalledTimes(2);
+    expect(predicate).toHaveBeenNthCalledWith(1, 1, 0, values);
+    expect(predicate).toHaveBeenNthCalledWith(2, 2, 1, values);
+  });
+
+  it("treats a null predicate as no predicate", () => {
+    expect([1, 2, 3].first(null)).toBe(1);
+  });
+
   it("throws for empty arrays", () => {
     expect(() => [].first()).toThrow(RangeError);
+  });
+
+  it("throws when no element satisfies the predicate", () => {
+    expect(() => [1, 2, 3].first(value => value > 3)).toThrow(RangeError);
   });
 
   it("does not modify original array", () => {
@@ -360,8 +427,30 @@ describe("Array.prototype.last", () => {
     expect(["x"].last()).toBe("x");
   });
 
+  it("returns the last element that satisfies the predicate", () => {
+    const values = [1, 2, 3, 4];
+    const predicate = vi.fn((value: number, index: number, array: readonly number[]) => {
+      expect(array).toBe(values);
+      return value <= 2;
+    });
+
+    expect(values.last(predicate)).toBe(2);
+    expect(predicate).toHaveBeenCalledTimes(3);
+    expect(predicate).toHaveBeenNthCalledWith(1, 4, 3, values);
+    expect(predicate).toHaveBeenNthCalledWith(2, 3, 2, values);
+    expect(predicate).toHaveBeenNthCalledWith(3, 2, 1, values);
+  });
+
+  it("treats a null predicate as no predicate", () => {
+    expect([1, 2, 3].last(null)).toBe(3);
+  });
+
   it("throws for empty arrays", () => {
     expect(() => [].last()).toThrow(RangeError);
+  });
+
+  it("throws when no element satisfies the predicate", () => {
+    expect(() => [1, 2, 3].last(value => value > 3)).toThrow(RangeError);
   });
 
   it("does not modify original array", () => {
@@ -370,6 +459,48 @@ describe("Array.prototype.last", () => {
     arr.last();
 
     expect(arr).toEqual([1, 2, 3]);
+  });
+});
+
+describe("Array.prototype.firstOrNull", () => {
+  it("returns the first element when no predicate is supplied", () => {
+    expect([1, 2, 3].firstOrNull()).toBe(1);
+    expect([1, 2, 3].firstOrNull(null)).toBe(1);
+  });
+
+  it("returns the first matching element", () => {
+    const values = [1, 2, 3, 4];
+
+    expect(values.firstOrNull((value, index, array) => {
+      expect(array).toBe(values);
+      return value % 2 === 0 && index > 0;
+    })).toBe(2);
+  });
+
+  it("returns null for empty arrays and when no element matches", () => {
+    expect([].firstOrNull()).toBeNull();
+    expect([1, 2, 3].firstOrNull(value => value > 3)).toBeNull();
+  });
+});
+
+describe("Array.prototype.lastOrNull", () => {
+  it("returns the last element when no predicate is supplied", () => {
+    expect([1, 2, 3].lastOrNull()).toBe(3);
+    expect([1, 2, 3].lastOrNull(null)).toBe(3);
+  });
+
+  it("returns the last matching element", () => {
+    const values = [1, 2, 3, 4];
+
+    expect(values.lastOrNull((value, index, array) => {
+      expect(array).toBe(values);
+      return value <= 2 && index < 2;
+    })).toBe(2);
+  });
+
+  it("returns null for empty arrays and when no element matches", () => {
+    expect([].lastOrNull()).toBeNull();
+    expect([1, 2, 3].lastOrNull(value => value > 3)).toBeNull();
   });
 });
 
@@ -791,105 +922,54 @@ describe("Array.prototype pattern methods", () => {
   const values = ["apple pie", "banana split", "orange juice"];
   const selector = (x: string) => x;
 
-  describe("containsAnyInAny", () => {
-    it("should return true when at least one pattern exists in at least one item", () => {
-      expect(values.containsAnyInAny(["apple", "zzz"], selector)).toBe(true);
+  describe("anyContainsAny", () => {
+    it("returns true when one selected value contains one pattern", () => {
+      expect(values.anyContainsAny(["apple", "zzz"], selector)).toBe(true);
+      expect(values.anyContainsAny([/^banana/i], selector)).toBe(true);
     });
 
-    it("should return true when regex matches one item", () => {
-      expect(values.containsAnyInAny([/^banana/i], selector)).toBe(true);
-    });
-
-    it("should return false when no pattern matches any item", () => {
-      expect(values.containsAnyInAny(["grape", "melon"], selector)).toBe(false);
-    });
-
-    it("should return false for empty patterns", () => {
-      expect(values.containsAnyInAny([], selector)).toBe(false);
-    });
-
-    it("should return false for empty array", () => {
-      expect([].containsAnyInAny(["apple"], selector)).toBe(false);
+    it("returns false when the array or patterns are empty", () => {
+      expect(values.anyContainsAny([], selector)).toBe(false);
+      expect([].anyContainsAny(["apple"], selector)).toBe(false);
     });
   });
 
-  describe("containsAnyInAll", () => {
-    it("should return true when one pattern exists in every item", () => {
-      const arr = ["cat food", "cat toy", "cat bed"];
-      expect(arr.containsAnyInAll(["cat", "dog"], selector)).toBe(true);
+  describe("anyContainsAll", () => {
+    it("requires one selected value to contain every pattern", () => {
+      expect(values.anyContainsAll(["apple", "pie"], selector)).toBe(true);
+      expect(values.anyContainsAll(["apple", "banana"], selector)).toBe(false);
     });
 
-    it("should return true when regex exists in every item", () => {
-      const arr = ["abc1", "xyz1", "ttt1"];
-      expect(arr.containsAnyInAll([/\d/], selector)).toBe(true);
-    });
-
-    it("should return false when no single pattern exists in every item", () => {
-      expect(values.containsAnyInAll(["apple", "banana"], selector)).toBe(false);
-    });
-
-    it("should return false for empty patterns", () => {
-      expect(values.containsAnyInAll([], selector)).toBe(false);
-    });
-
-    it("should return true for empty array", () => {
-      expect([].containsAnyInAll(["apple"], selector)).toBe(true);
+    it("uses existential semantics for an empty pattern set", () => {
+      expect(values.anyContainsAll([], selector)).toBe(true);
+      expect([].anyContainsAll([], selector)).toBe(false);
     });
   });
 
-  describe("containsAllInAny", () => {
-    it("should return true when all patterns are covered across items", () => {
-      expect(
-        values.containsAllInAny(["apple", "banana", "orange"], selector)
-      ).toBe(true);
+  describe("allContainsAny", () => {
+    it("allows different selected values to contain different patterns", () => {
+      expect(values.allContainsAny(["apple", "banana", "orange"], selector)).toBe(true);
+      expect(values.allContainsAny(["apple", "banana"], selector)).toBe(false);
     });
 
-    it("should return true with mixed string and regex patterns", () => {
-      expect(
-        values.containsAllInAny(["apple", /^banana/i, /juice$/], selector)
-      ).toBe(true);
-    });
-
-    it("should return false when one pattern is missing", () => {
-      expect(
-        values.containsAllInAny(["apple", "banana", "grape"], selector)
-      ).toBe(false);
-    });
-
-    it("should return true for empty patterns", () => {
-      expect(values.containsAllInAny([], selector)).toBe(true);
-    });
-
-    it("should return false for empty array with non-empty patterns", () => {
-      expect([].containsAllInAny(["apple"], selector)).toBe(false);
+    it("uses universal semantics for an empty array", () => {
+      expect([].allContainsAny(["apple"], selector)).toBe(true);
+      expect(values.allContainsAny([], selector)).toBe(false);
     });
   });
 
-  describe("containsAllInAll", () => {
-    it("should return true when every pattern exists in every item", () => {
-      const arr = ["red big car", "red big bus", "red big bike"];
+  describe("allContainsAll", () => {
+    it("requires every selected value to contain every pattern", () => {
+      const allRedAndBig = ["red big car", "red big bus", "red big bike"];
+      const missingBig = ["red big car", "red car", "red big bike"];
 
-      expect(arr.containsAllInAll(["red", "big"], selector)).toBe(true);
+      expect(allRedAndBig.allContainsAll(["red", "big"], selector)).toBe(true);
+      expect(missingBig.allContainsAll(["red", "big"], selector)).toBe(false);
     });
 
-    it("should return true with regex patterns", () => {
-      const arr = ["A1X", "B1Y", "C1Z"];
-
-      expect(arr.containsAllInAll([/\d/], selector)).toBe(true);
-    });
-
-    it("should return false when one pattern is missing from one item", () => {
-      const arr = ["red big car", "red car", "red big bike"];
-
-      expect(arr.containsAllInAll(["red", "big"], selector)).toBe(false);
-    });
-
-    it("should return true for empty patterns", () => {
-      expect(values.containsAllInAll([], selector)).toBe(true);
-    });
-
-    it("should return true for empty array", () => {
-      expect([].containsAllInAll(["apple"], selector)).toBe(true);
+    it("returns true when either quantified set is empty", () => {
+      expect(values.allContainsAll([], selector)).toBe(true);
+      expect([].allContainsAll(["apple"], selector)).toBe(true);
     });
   });
 });

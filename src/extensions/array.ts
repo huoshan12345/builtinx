@@ -1,6 +1,8 @@
 import type { MatchPattern } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/helpers/utils';
 
+type ArrayPredicate<T> = (value: T, index: number, array: readonly T[]) => boolean;
+
 declare global {
   interface Array<T> {
     /**
@@ -49,18 +51,28 @@ declare global {
     sample(): T | undefined;
 
     /**
-     * Returns the first element of the array.
+     * Returns the first element of the array that satisfies an optional predicate.
      *
-     * @throws {RangeError} When the array is empty.
+     * @throws {RangeError} When the array is empty or no element satisfies the predicate.
      */
-    first(): T;
+    first(predicate?: ArrayPredicate<T> | null): T;
 
     /**
-     * Returns the last element of the array.
-     *
-     * @throws {RangeError} When the array is empty.
+     * Returns the first element of the array that satisfies an optional predicate, or null when none exists.
      */
-    last(): T;
+    firstOrNull(predicate?: ArrayPredicate<T> | null): T | null;
+
+    /**
+     * Returns the last element of the array that satisfies an optional predicate.
+     *
+     * @throws {RangeError} When the array is empty or no element satisfies the predicate.
+     */
+    last(predicate?: ArrayPredicate<T> | null): T;
+
+    /**
+     * Returns the last element of the array that satisfies an optional predicate, or null when none exists.
+     */
+    lastOrNull(predicate?: ArrayPredicate<T> | null): T | null;
 
     /**
      * Returns a new array containing distinct elements.
@@ -82,6 +94,19 @@ declare global {
      * Appends an item to the end of the array and returns the array.
      */
     append<T>(this: T[], item: T): T[];
+
+    /**
+     * Inserts an item at the specified index and returns the array.
+     *
+     * Supports negative indexes using `splice` semantics: -1 inserts before the last item.
+     * Does nothing when the index is out of range. The index equal to the array length appends the item.
+     */
+    insert(index: number, item: T): this;
+
+    /**
+     * Inserts an item at the beginning of the array and returns the array.
+     */
+    prepend(item: T): this;
 
     /**
      * Counts elements by key.
@@ -128,32 +153,32 @@ declare global {
     swap(i: number, j: number): this;
 
     /**
-     * Returns whether any of the specified patterns matches any of the selected string values.
+     * Returns whether any selected string value contains any of the specified patterns.
      *
      * Returns false when `patterns` is empty.
      */
-    containsAnyInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    anyContainsAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
 
     /**
-     * Returns whether any of the specified patterns matches all of the selected string values.
+     * Returns whether any selected string value contains all of the specified patterns.
      *
-     * Returns false when `patterns` is empty.
+     * Returns false when the array is empty, and true when `patterns` is empty and the array is non-empty.
      */
-    containsAnyInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    anyContainsAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
 
     /**
-     * Returns whether all of the specified patterns match any of the selected string values.
+     * Returns whether all selected string values contain any of the specified patterns.
+     *
+     * Returns true when the array is empty, and false when `patterns` is empty and the array is non-empty.
+     */
+    allContainsAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+
+    /**
+     * Returns whether all selected string values contain all of the specified patterns.
      *
      * Returns true when `patterns` is empty.
      */
-    containsAllInAny(patterns: MatchPattern[], selector: (t: T) => string): boolean;
-
-    /**
-     * Returns whether all of the specified patterns match all of the selected string values.
-     *
-     * Returns true when `patterns` is empty.
-     */
-    containsAllInAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
+    allContainsAll(patterns: MatchPattern[], selector: (t: T) => string): boolean;
   }
 
   interface ArrayConstructor {
@@ -247,15 +272,67 @@ function sample<T>(this: T[]): T | undefined {
   return this[index];
 };
 
-function first<T>(this: T[]): T {
-  this.throwIfEmpty();
-  return this[0];
+function first<T>(this: T[], predicate?: ArrayPredicate<T> | null): T {
+  if (predicate == null) {
+    this.throwIfEmpty();
+    return this[0];
+  }
+
+  for (let index = 0; index < this.length; index++) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  throw new RangeError("No element satisfies the predicate.");
 }
 
-function last<T>(this: T[]): T {
-  this.throwIfEmpty();
-  return this[this.length - 1];
+function firstOrNull<T>(this: T[], predicate?: ArrayPredicate<T> | null): T | null {
+  if (predicate == null) {
+    return this.length === 0 ? null : this[0];
+  }
+
+  for (let index = 0; index < this.length; index++) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function last<T>(this: T[], predicate?: ArrayPredicate<T> | null): T {
+  if (predicate == null) {
+    this.throwIfEmpty();
+    return this[this.length - 1];
+  }
+
+  for (let index = this.length - 1; index >= 0; index--) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  throw new RangeError("No element satisfies the predicate.");
 };
+
+function lastOrNull<T>(this: T[], predicate?: ArrayPredicate<T> | null): T | null {
+  if (predicate == null) {
+    return this.length === 0 ? null : this[this.length - 1];
+  }
+
+  for (let index = this.length - 1; index >= 0; index--) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 function distinct<T>(this: T[]): T[] {
   return [...new Set(this)];
@@ -292,6 +369,17 @@ function append<T>(this: T[], item: T) {
   this.push(item);
   return this;
 };
+
+function insert<T>(this: T[], index: number, item: T) {
+  if (this.hasIndex(index) || index === this.length) {
+    this.splice(index, 0, item);
+  }
+  return this;
+}
+
+function prepend<T>(this: T[], item: T) {
+  return this.insert(0, item);
+}
 
 function count<T>(this: T[],
   predicate?: (item: T, index: number, array: readonly T[]) => boolean
@@ -356,24 +444,24 @@ function swap<T>(this: T[], i: number, j: number): T[] {
   return this;
 };
 
-function containsAnyInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function anyContainsAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.some(x => x.contains(m)));
+  return values.some(value => patterns.some(pattern => value.contains(pattern)));
 };
 
-function containsAnyInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function anyContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.some(m => values.every(x => x.contains(m)));
+  return values.some(value => patterns.every(pattern => value.contains(pattern)));
 };
 
-function containsAllInAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function allContainsAny<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.some(x => x.contains(m)));
+  return values.every(value => patterns.some(pattern => value.contains(pattern)));
 };
 
-function containsAllInAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
+function allContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T) => string) {
   const values = this.map(selector);
-  return patterns.every(m => values.every(x => x.contains(m)));
+  return values.every(value => patterns.every(pattern => value.contains(pattern)));
 };
 
 definePropertyIfAbsent(Array, 'cast', cast);
@@ -383,17 +471,21 @@ definePropertyIfAbsent(Array.prototype, 'removeAt', removeAt);
 definePropertyIfAbsent(Array.prototype, 'throwIfEmpty', throwIfEmpty);
 definePropertyIfAbsent(Array.prototype, 'sample', sample);
 definePropertyIfAbsent(Array.prototype, 'first', first);
+definePropertyIfAbsent(Array.prototype, 'firstOrNull', firstOrNull);
 definePropertyIfAbsent(Array.prototype, 'last', last);
+definePropertyIfAbsent(Array.prototype, 'lastOrNull', lastOrNull);
 definePropertyIfAbsent(Array.prototype, 'distinct', distinct);
 definePropertyIfAbsent(Array.prototype, 'groupBy', groupBy);
 definePropertyIfAbsent(Array.prototype, 'append', append);
+definePropertyIfAbsent(Array.prototype, 'insert', insert);
+definePropertyIfAbsent(Array.prototype, 'prepend', prepend);
 definePropertyIfAbsent(Array.prototype, 'countBy', countBy);
 definePropertyIfAbsent(Array.prototype, 'count', count);
 definePropertyIfAbsent(Array.prototype, 'resize', resize);
 definePropertyIfAbsent(Array.prototype, 'replaceFrom', replaceFrom);
 definePropertyIfAbsent(Array.prototype, 'swap', swap);
-definePropertyIfAbsent(Array.prototype, 'containsAnyInAny', containsAnyInAny);
-definePropertyIfAbsent(Array.prototype, 'containsAnyInAll', containsAnyInAll);
-definePropertyIfAbsent(Array.prototype, 'containsAllInAny', containsAllInAny);
-definePropertyIfAbsent(Array.prototype, 'containsAllInAll', containsAllInAll);
+definePropertyIfAbsent(Array.prototype, 'anyContainsAny', anyContainsAny);
+definePropertyIfAbsent(Array.prototype, 'anyContainsAll', anyContainsAll);
+definePropertyIfAbsent(Array.prototype, 'allContainsAny', allContainsAny);
+definePropertyIfAbsent(Array.prototype, 'allContainsAll', allContainsAll);
 definePropertyIfAbsent(Array.prototype, 'remove', remove);
