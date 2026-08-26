@@ -6,7 +6,7 @@ Reviewed every TypeScript file under `src/`, starting with package boundaries an
 
 Validation completed:
 
-- `pnpm test -- --run` — 26 test files and 557 tests passed.
+- `pnpm test -- --run` — 27 test files and 560 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification
@@ -16,12 +16,14 @@ Validation completed:
 - Finding 3 is **accepted by design**. `replaceMatch` intentionally remains inherited from `Array.prototype`.
 - Finding 4 is **fixed and verified**. The typed query readers now use the effective last value, and `deleteParam` adopts the platform's optional-value deletion API. Regression coverage was added for both behaviors.
 - Finding 5 is **fixed and verified**. `leading` and `trailing` are independent options, both defaulting to true, and regression coverage verifies their combined and disabled behavior.
+- The mutation-observer startup option is **refined and verified**. `callAtOnce` was renamed to `callOnStart` to distinguish startup invocation from debounce-edge behavior. The default remains true and the runtime behavior is unchanged.
+- Finding 6 is **fixed and verified**. `Lazy<T>` now caches nullish values as successful creation results and provides `reset()` to discard the cache without invoking the factory.
 
 ## Design summary
 
 The package has a coherent stated purpose: an intentional, side-effecting layer of built-in and web-platform conveniences, supplemented by exported utility types. That model is inherently collision-prone, but the README communicates the prototype-patching decision clearly enough to review the individual APIs.
 
-The storage cache extension is an exception. Its data-ownership model is unsafe because it treats all entries in a caller-owned `Storage` instance as cache records. That must be corrected before relying on the cache API; the remaining findings concern independent API and implementation defects.
+The storage cache extension remains the main design concern because its cache format has no ownership marker. The destructive quota-recovery behavior has been removed; the remaining boundary limitation is documented in Finding 1.
 
 ## Findings
 
@@ -33,21 +35,21 @@ Evidence: `src/extensions/storage.ts:55`, `src/extensions/storage.ts:72`, `src/e
 
 Give cache entries a reserved, documented key prefix and an explicit versioned envelope. Enumerate, validate, and remove only entries in that namespace. This is no longer a P0 issue because quota recovery no longer evicts arbitrary keys.
 
-### 2. [P1] Importing the core entry point silently replaces an existing global `BuiltinX`
+### 2. [Accepted by design] Importing the core entry point replaces the global `BuiltinX`
 
 The helper namespace is installed by unconditional assignment. This is inconsistent with the prototype installation policy, which avoids replacing existing own properties. Any host that already uses `globalThis.BuiltinX` loses its value merely by importing this package, without a diagnostic or opt-in.
 
 Evidence: `src/helpers/index.ts:7`; the core entry point imports this module at `src/index.ts:16`.
 
-Prefer named exports as the primary API. If the global alias must remain, install it only when absent and expose an explicit installation function or a collision error, rather than overwriting an unrelated global.
+The owner has confirmed that the package intentionally owns this global after import. No implementation change is required; the collision policy should remain documented for consumers.
 
-### 3. [P2] Match-specific `replaceMatch` is installed on every array
+### 3. [Accepted by design] Match-specific `replaceMatch` is installed on every array
 
 The ambient declaration promises `match.replaceMatch(replacement)`, yet the implementation adds `replaceMatch` to `Array.prototype`. A `RegExpExecArray` happens to inherit it because it is an array, but every ordinary array now also receives an undocumented, meaningless method. The type declaration and the mutated runtime surface therefore disagree, and a match operation leaks into the package's broadest patched prototype.
 
 Evidence: declaration at `src/extensions/array.regexp.ts:62`; installation at `src/extensions/array.regexp.ts:159`.
 
-Make this an exported function such as `replaceMatch(match, replacement)`, or install it deliberately on the match abstraction with a matching declaration. Do not extend `Array.prototype` for a match-specific operation.
+The owner has confirmed that this prototype placement is intentional. No implementation change is required.
 
 ### 4. [Fixed] Query helpers now use consistent duplicate-key semantics
 
@@ -65,13 +67,13 @@ Evidence: `src/types/utils.ts:10`, `src/helpers/utils.ts:5`, `src/helpers/utils.
 
 No further action is required for this finding.
 
-### 6. [P1] `Lazy<T>` fails to cache `null` or `undefined`
+### 6. [Fixed] `Lazy<T>` caches nullish values and supports reset
 
-`Lazy<T>` permits nullable `T`, but it uses nullish coalescing assignment as its creation flag. A factory returning `null` or `undefined` runs again on every `value` access, and `isValueCreated` stays false. This violates both the lazy-value lifetime model and the public creation-state API.
+`Lazy<T>` now tracks successful creation independently of the cached value. A factory result of `null` or `undefined` is cached and makes `isValueCreated` true. `reset()` clears that state without invoking the factory, so the next `value` access creates and caches a new result.
 
-Evidence: `src/utils/lazy.ts:2`, `src/utils/lazy.ts:5`, `src/utils/lazy.ts:8`.
+Evidence: `src/utils/lazy.ts:7`, `src/utils/lazy.ts:15`, `src/utils/lazy.ts:31`; regression tests in `test/utils/lazy.test.ts`.
 
-Track creation with a separate boolean or a private sentinel so every valid `T` value, including `null` and `undefined`, is cached exactly once. Add regression tests for both cases.
+No further action is required for this finding.
 
 ### 7. [P1] `TimeSpan` does not maintain a valid, parseable value invariant
 
