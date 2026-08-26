@@ -462,6 +462,48 @@ describe("Array.prototype.last", () => {
   });
 });
 
+describe("Array.prototype.firstOrNull", () => {
+  it("returns the first element when no predicate is supplied", () => {
+    expect([1, 2, 3].firstOrNull()).toBe(1);
+    expect([1, 2, 3].firstOrNull(null)).toBe(1);
+  });
+
+  it("returns the first matching element", () => {
+    const values = [1, 2, 3, 4];
+
+    expect(values.firstOrNull((value, index, array) => {
+      expect(array).toBe(values);
+      return value % 2 === 0 && index > 0;
+    })).toBe(2);
+  });
+
+  it("returns null for empty arrays and when no element matches", () => {
+    expect([].firstOrNull()).toBeNull();
+    expect([1, 2, 3].firstOrNull(value => value > 3)).toBeNull();
+  });
+});
+
+describe("Array.prototype.lastOrNull", () => {
+  it("returns the last element when no predicate is supplied", () => {
+    expect([1, 2, 3].lastOrNull()).toBe(3);
+    expect([1, 2, 3].lastOrNull(null)).toBe(3);
+  });
+
+  it("returns the last matching element", () => {
+    const values = [1, 2, 3, 4];
+
+    expect(values.lastOrNull((value, index, array) => {
+      expect(array).toBe(values);
+      return value <= 2 && index < 2;
+    })).toBe(2);
+  });
+
+  it("returns null for empty arrays and when no element matches", () => {
+    expect([].lastOrNull()).toBeNull();
+    expect([1, 2, 3].lastOrNull(value => value > 3)).toBeNull();
+  });
+});
+
 describe("Array.prototype.distinct", () => {
   it("removes duplicate numbers", () => {
     expect([1, 1, 2, 3, 2].distinct()).toEqual([1, 2, 3]);

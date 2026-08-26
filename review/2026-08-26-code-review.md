@@ -6,7 +6,7 @@ Reviewed every TypeScript file under `src/`, starting with package boundaries an
 
 Validation completed:
 
-- `pnpm test -- --run` — 30 test files and 582 tests passed.
+- `pnpm test -- --run` — 30 test files and 588 tests passed.
 - `pnpm run type-check` — passed.
 
 ## Follow-up verification

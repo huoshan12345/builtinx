@@ -1,6 +1,8 @@
 import type { MatchPattern } from '@/types/lib';
 import { definePropertyIfAbsent } from '@/helpers/utils';
 
+type ArrayPredicate<T> = (value: T, index: number, array: readonly T[]) => boolean;
+
 declare global {
   interface Array<T> {
     /**
@@ -53,14 +55,24 @@ declare global {
      *
      * @throws {RangeError} When the array is empty or no element satisfies the predicate.
      */
-    first(predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T;
+    first(predicate?: ArrayPredicate<T> | null): T;
+
+    /**
+     * Returns the first element of the array that satisfies an optional predicate, or null when none exists.
+     */
+    firstOrNull(predicate?: ArrayPredicate<T> | null): T | null;
 
     /**
      * Returns the last element of the array that satisfies an optional predicate.
      *
      * @throws {RangeError} When the array is empty or no element satisfies the predicate.
      */
-    last(predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T;
+    last(predicate?: ArrayPredicate<T> | null): T;
+
+    /**
+     * Returns the last element of the array that satisfies an optional predicate, or null when none exists.
+     */
+    lastOrNull(predicate?: ArrayPredicate<T> | null): T | null;
 
     /**
      * Returns a new array containing distinct elements.
@@ -260,7 +272,7 @@ function sample<T>(this: T[]): T | undefined {
   return this[index];
 };
 
-function first<T>(this: T[], predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T {
+function first<T>(this: T[], predicate?: ArrayPredicate<T> | null): T {
   if (predicate == null) {
     this.throwIfEmpty();
     return this[0];
@@ -276,7 +288,22 @@ function first<T>(this: T[], predicate?: ((value: T, index: number, array: reado
   throw new RangeError("No element satisfies the predicate.");
 }
 
-function last<T>(this: T[], predicate?: ((value: T, index: number, array: readonly T[]) => boolean) | null): T {
+function firstOrNull<T>(this: T[], predicate?: ArrayPredicate<T> | null): T | null {
+  if (predicate == null) {
+    return this.length === 0 ? null : this[0];
+  }
+
+  for (let index = 0; index < this.length; index++) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function last<T>(this: T[], predicate?: ArrayPredicate<T> | null): T {
   if (predicate == null) {
     this.throwIfEmpty();
     return this[this.length - 1];
@@ -291,6 +318,21 @@ function last<T>(this: T[], predicate?: ((value: T, index: number, array: readon
 
   throw new RangeError("No element satisfies the predicate.");
 };
+
+function lastOrNull<T>(this: T[], predicate?: ArrayPredicate<T> | null): T | null {
+  if (predicate == null) {
+    return this.length === 0 ? null : this[this.length - 1];
+  }
+
+  for (let index = this.length - 1; index >= 0; index--) {
+    const value = this[index];
+    if (predicate(value, index, this)) {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 function distinct<T>(this: T[]): T[] {
   return [...new Set(this)];
@@ -429,7 +471,9 @@ definePropertyIfAbsent(Array.prototype, 'removeAt', removeAt);
 definePropertyIfAbsent(Array.prototype, 'throwIfEmpty', throwIfEmpty);
 definePropertyIfAbsent(Array.prototype, 'sample', sample);
 definePropertyIfAbsent(Array.prototype, 'first', first);
+definePropertyIfAbsent(Array.prototype, 'firstOrNull', firstOrNull);
 definePropertyIfAbsent(Array.prototype, 'last', last);
+definePropertyIfAbsent(Array.prototype, 'lastOrNull', lastOrNull);
 definePropertyIfAbsent(Array.prototype, 'distinct', distinct);
 definePropertyIfAbsent(Array.prototype, 'groupBy', groupBy);
 definePropertyIfAbsent(Array.prototype, 'append', append);
