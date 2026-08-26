@@ -21,6 +21,14 @@ declare global {
     getCache<T>(key: string): Nullable<T>;
 
     /**
+     * Returns and removes the unexpired cached value for the specified key.
+     *
+     * Returns null when the key is missing, expired, or does not contain a cache entry.
+     * Expired cache entries are removed; unrecognized values are left unchanged.
+     */
+    takeCache<T>(key: string): Nullable<T>;
+
+    /**
      * Returns the cached value for the specified key, or creates and stores one when absent.
      *
      * The factory is only called when the current cache entry is missing, expired, or unrecognized.
@@ -117,6 +125,14 @@ function getCache<T>(this: Storage, key: string): Nullable<T> {
   return entry.value as T;
 };
 
+function takeCache<T>(this: Storage, key: string): Nullable<T> {
+  const value = this.getCache<T>(key);
+  if (value != null) {
+    this.removeItem(key);
+  }
+  return value;
+}
+
 async function getOrCreateCacheAsync<T>(this: Storage, key: string, factory: (key: string) => Awaitable<T>, expiration: TimeSpan) {
   let obj = this.getCache<T>(key);
   if (obj == null) {
@@ -138,5 +154,6 @@ function* keys(this: Storage): Iterable<string> {
 definePropertyIfAbsent(Storage.prototype, 'cleanupExpired', cleanupExpired);
 definePropertyIfAbsent(Storage.prototype, 'setCache', setCache);
 definePropertyIfAbsent(Storage.prototype, 'getCache', getCache);
+definePropertyIfAbsent(Storage.prototype, 'takeCache', takeCache);
 definePropertyIfAbsent(Storage.prototype, 'getOrCreateCacheAsync', getOrCreateCacheAsync);
 definePropertyIfAbsent(Storage.prototype, 'keys', keys);

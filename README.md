@@ -188,6 +188,7 @@ const observer = document.body.observe(
 
 - `Storage.setCache(key, value, expiration)`.
 - `Storage.getCache(key)`.
+- `Storage.takeCache(key)`.
 - `Storage.getOrCreateCacheAsync(key, factory, expiration)`.
 - `Storage.cleanupExpired()`.
 - `Storage.keys()`.
@@ -196,7 +197,7 @@ const observer = document.body.observe(
 import { TimeSpan } from "builtinx";
 
 localStorage.setCache("profile", { name: "Ada" }, TimeSpan.fromMinutes(10));
-const profile = localStorage.getCache<{ name: string }>("profile");
+const profile = localStorage.takeCache<{ name: string }>("profile");
 ```
 
 ## Helper Namespace
