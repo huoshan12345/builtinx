@@ -8,28 +8,28 @@ declare global {
      * Stores a cache entry with an expiration time.
      *
      * Nullish values are ignored and are not written to storage.
-     * Existing values may be evicted if storage is full.
+     * If storage is full, expired cache entries are cleaned up before retrying.
      */
     setCache<T>(key: string, value: T, expiration: TimeSpan): void;
 
     /**
      * Returns the cached value for the specified key.
      *
-     * Returns null when the key is missing, expired, or contains invalid cache data.
-     * Expired and invalid entries are removed from storage.
+     * Returns null when the key is missing, expired, or does not contain a cache entry.
+     * Expired cache entries are removed; unrecognized values are left unchanged.
      */
     getCache<T>(key: string): Nullable<T>;
 
     /**
      * Returns the cached value for the specified key, or creates and stores one when absent.
      *
-     * The factory is only called when the current cache entry is missing, expired, or invalid.
+     * The factory is only called when the current cache entry is missing, expired, or unrecognized.
      * Nullish factory results are returned to the caller but are not stored.
      */
     getOrCreateCacheAsync<T>(key: string, factory: (key: string) => Awaitable<T>, expiration: TimeSpan): Promise<T>;
 
     /**
-     * Removes expired and invalid cache entries.
+     * Removes expired cache entries and leaves unrecognized values unchanged.
      */
     cleanupExpired(): void;
 

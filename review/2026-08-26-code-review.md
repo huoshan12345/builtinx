@@ -22,6 +22,7 @@ Validation completed:
 - Finding 8 is **fixed and verified**. `Timer.every` validates its interval and accepts an optional `AbortSignal` that completes the generator promptly during a pending wait.
 - Finding 9 is **fixed and verified**. `Http.downloadText` now exposes its Promise return type and defaults to the standard `text/plain` MIME type.
 - Finding 10 is **fixed and verified**. Non-sticky `find` and `findAll` retain their from-the-start search contract, while sticky (`y`) expressions begin at their current `lastIndex` and preserve sticky matching semantics. Both methods restore the caller's original `lastIndex` afterward.
+- Finding 11 is **fixed and verified**. Storage API documentation now states that only expired cache entries are removed and unrecognized values are preserved.
 
 ## Design summary
 
@@ -111,10 +112,10 @@ Evidence: `src/extensions/regexp.ts:10`, `src/extensions/regexp.ts:17`, `src/ext
 
 No further action is required for this finding.
 
-### 11. [P2] Storage documentation still says invalid entries are removed
+### 11. [Fixed] Storage documentation reflects preservation of unrecognized values
 
-The follow-up implementation intentionally preserves values that cannot be parsed as cache entries, but the public comments for `getCache` and `cleanupExpired` still say that invalid entries are removed. Callers can therefore make an incorrect retention and cleanup decision from the declared API.
+The public comments now state that `getCache` and `cleanupExpired` preserve values that are not recognized as cache entries, while expired cache entries are removed. The cache-write documentation also accurately describes expiration cleanup as the quota-recovery step.
 
-Evidence: `src/extensions/storage.ts:18`, `src/extensions/storage.ts:32`, `src/extensions/storage.ts:122`.
+Evidence: `src/extensions/storage.ts:8`, `src/extensions/storage.ts:15`, `src/extensions/storage.ts:31`.
 
-Update the comments to say that expired cache entries are removed, while unrecognized values are preserved.
+No further action is required for this finding.
