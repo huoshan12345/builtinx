@@ -66,6 +66,22 @@ declare global {
      * Nullish values are appended as empty strings.
      */
     add(name: string, value: Nullishable<string> | Nullishable<string>[]): URLSearchParams;
+
+    /**
+     * Returns whether the parameter list is empty.
+     */
+    isEmpty(): boolean;
+    /**
+     * Returns whether the parameter list is not empty.
+     */
+    isNotEmpty(): boolean;
+
+    /**
+     * Deletes the key only when it exists.
+     *
+     * Returns whether the key was deleted.
+     */
+    tryDelete(key: string, value?: string): boolean;
   }
 }
 
@@ -152,6 +168,22 @@ function add(this: URLSearchParams, name: string, value: Nullishable<string> | N
   return this;
 };
 
+function isEmpty(this: URLSearchParams): boolean {
+  return this.size === 0;
+}
+
+function isNotEmpty(this: URLSearchParams): boolean {
+  return this.size > 0;
+}
+
+function tryDelete(this: URLSearchParams, key: string, value?: string): boolean {
+  const has = this.has(key, value);
+  if (has) {
+    this.delete(key, value);
+  }
+  return has;
+}
+
 definePropertyIfAbsent(URLSearchParams.prototype, "getInt", getInt);
 definePropertyIfAbsent(URLSearchParams.prototype, "getBool", getBool);
 definePropertyIfAbsent(URLSearchParams.prototype, "setBool", setBool);
@@ -162,3 +194,6 @@ definePropertyIfAbsent(URLSearchParams.prototype, "getEffectiveValue", getEffect
 definePropertyIfAbsent(URLSearchParams.prototype, "hasEffectiveValue", hasEffectiveValue);
 definePropertyIfAbsent(URLSearchParams.prototype, "trySet", trySet);
 definePropertyIfAbsent(URLSearchParams.prototype, "add", add);
+definePropertyIfAbsent(URLSearchParams.prototype, "isEmpty", isEmpty);
+definePropertyIfAbsent(URLSearchParams.prototype, "isNotEmpty", isNotEmpty);
+definePropertyIfAbsent(URLSearchParams.prototype, "tryDelete", tryDelete); 

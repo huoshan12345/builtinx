@@ -167,6 +167,27 @@ function resolve(this: URL, path: string) {
   return new URL(path, this);
 };
 
+function clone(this: URL, func?: (url: URL) => void): URL {
+  const cloned = new URL(this.href);
+  if (func) {
+    func(cloned);
+  }
+  return cloned;
+}
+
+function hasNoParams(this: URL): boolean {
+  return this.searchParams.isEmpty();
+}
+
+function hasParams(this: URL): boolean {
+  return this.searchParams.isNotEmpty();
+}
+
+function tryDeleteParam(this: URL, key: string, value?: string): boolean {
+  const deleted = this.searchParams.tryDelete(key, value);
+  return deleted;
+}
+
 definePropertyIfAbsent(URL.prototype, 'setParam', setParam);
 definePropertyIfAbsent(URL.prototype, 'getParam', getParam);
 definePropertyIfAbsent(URL.prototype, 'getNumberParam', getNumberParam);
@@ -179,3 +200,7 @@ definePropertyIfAbsent(URL.prototype, 'goto', goto);
 definePropertyIfAbsent(URL.prototype, 'setHost', setHost);
 definePropertyIfAbsent(URL.prototype, 'setProtocol', setProtocol);
 definePropertyIfAbsent(URL.prototype, 'resolve', resolve);
+definePropertyIfAbsent(URL.prototype, 'clone', clone);
+definePropertyIfAbsent(URL.prototype, 'hasNoParams', hasNoParams);
+definePropertyIfAbsent(URL.prototype, 'hasParams', hasParams);
+definePropertyIfAbsent(URL.prototype, 'tryDeleteParam', tryDeleteParam);
