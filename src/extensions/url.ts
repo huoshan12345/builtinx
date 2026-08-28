@@ -77,6 +77,31 @@ declare global {
      * Resolves a relative or absolute URL reference against this URL.
      */
     resolve(path: string): URL;
+
+    /**
+     * Returns an independent copy of this URL.
+     *
+     * The optional callback can modify the copy before it is returned.
+     */
+    clone(func?: (url: URL) => void): URL;
+
+    /**
+     * Returns whether this URL has no query parameters.
+     */
+    hasNoParams(): boolean;
+
+    /**
+     * Returns whether this URL has at least one query parameter.
+     */
+    hasParams(): boolean;
+
+    /**
+     * Deletes a query parameter when it exists.
+     *
+     * When `value` is provided, only matching values are deleted.
+     * Returns whether a parameter was deleted.
+     */
+    tryDeleteParam(key: string, value?: string): boolean;
   }
 }
 

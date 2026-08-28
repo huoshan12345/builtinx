@@ -252,3 +252,42 @@ describe("URLSearchParams.prototype.add", () => {
     expect(params.add("a", "1")).toBe(params);
   });
 });
+
+describe("URLSearchParams.prototype.isEmpty and isNotEmpty", () => {
+  it("identifies an empty parameter list", () => {
+    const params = new URLSearchParams();
+
+    expect(params.isEmpty()).toBe(true);
+    expect(params.isNotEmpty()).toBe(false);
+  });
+
+  it("identifies a non-empty parameter list", () => {
+    const params = new URLSearchParams("a=1");
+
+    expect(params.isEmpty()).toBe(false);
+    expect(params.isNotEmpty()).toBe(true);
+  });
+});
+
+describe("URLSearchParams.prototype.tryDelete", () => {
+  it("deletes an existing key and returns true", () => {
+    const params = new URLSearchParams("a=1&b=2");
+
+    expect(params.tryDelete("a")).toBe(true);
+    expect(params.toString()).toBe("b=2");
+  });
+
+  it("deletes only matching values when a value is provided", () => {
+    const params = new URLSearchParams("a=1&a=2");
+
+    expect(params.tryDelete("a", "1")).toBe(true);
+    expect(params.getAll("a")).toEqual(["2"]);
+  });
+
+  it("returns false without changing the parameter list when no match exists", () => {
+    const params = new URLSearchParams("a=1");
+
+    expect(params.tryDelete("a", "2")).toBe(false);
+    expect(params.toString()).toBe("a=1");
+  });
+});
