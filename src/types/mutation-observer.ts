@@ -79,7 +79,7 @@ export class MutationObserverOptions implements MutationObserverInit {
   leading: boolean = true;
   /** If true, triggers the callback on the trailing edge of the debounce. */
   trailing: boolean = true;
-  /** If true, invokes the callback once with an empty mutation list before observation starts. */
+  /** If true, invokes the callback once with a synthetic mutation record targeting the observed node. */
   callOnStart: boolean = true;
   /** Optional callback to be executed before the main callback. */
   beforeCallback?: NodeMutationCallback;
