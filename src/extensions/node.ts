@@ -51,6 +51,23 @@ function isTextNode(this: Node): boolean {
   return this.nodeType === Node.TEXT_NODE;
 };
 
+function createInitialMutationRecord(target: Node): MutationRecord {
+  const document = target.ownerDocument ?? target as Document;
+  const emptyNodes = document.createDocumentFragment().childNodes;
+
+  return {
+    type: 'childList',
+    target,
+    addedNodes: emptyNodes,
+    removedNodes: emptyNodes,
+    previousSibling: null,
+    nextSibling: null,
+    attributeName: null,
+    attributeNamespace: null,
+    oldValue: null,
+  };
+}
+
 function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
   const opts = new MutationObserverOptions(options);
   const node = this;
@@ -71,9 +88,10 @@ function observe(this: Node, callback: NodeMutationCallback, options?: Partial<M
   );
 
   if (opts.callOnStart) {
-    opts.beforeCallback?.([], observer, node);
-    callback([], observer, node);
-    opts.afterCallback?.([], observer, node);
+    const records = [createInitialMutationRecord(node)];
+    opts.beforeCallback?.(records, observer, node);
+    callback(records, observer, node);
+    opts.afterCallback?.(records, observer, node);
   }
 
   observer.observe(node, opts.toNativeInit());

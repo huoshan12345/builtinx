@@ -190,7 +190,27 @@ describe('Node.prototype.observe', () => {
     });
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(callback).toHaveBeenCalledWith([], expect.anything(), node);
+    expect(callback).toHaveBeenCalledWith([
+      expect.objectContaining({
+        type: 'childList',
+        target: node,
+      })
+    ], expect.anything(), node);
+  });
+
+  test('should not be skipped by a debounced callback on start', () => {
+    const debounced = BuiltinX.Node.debounceMutationCallback(callback, {
+      leading: true,
+      trailing: false,
+    });
+
+    node.observe(debounced, {
+      callOnStart: true,
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback.mock.calls[0][0]).toHaveLength(1);
+    expect(callback.mock.calls[0][0][0].target).toBe(node);
   });
 
   test('should call beforeCallback and afterCallback on start', () => {
@@ -206,6 +226,10 @@ describe('Node.prototype.observe', () => {
     expect(before).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledTimes(1);
     expect(after).toHaveBeenCalledTimes(1);
+
+    const records = callback.mock.calls[0][0];
+    expect(before.mock.calls[0][0]).toBe(records);
+    expect(after.mock.calls[0][0]).toBe(records);
 
     expect(before.mock.invocationCallOrder[0])
       .toBeLessThan(callback.mock.invocationCallOrder[0]);
