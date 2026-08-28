@@ -173,7 +173,7 @@ Load these with `import "builtinx/dom"` after the core entry.
 
 - `Node.ownText()` returns direct child text only.
 - `Node.isTextNode()` and `Node.isNewLineTextNode()`.
-- `Node.observe(callback, options?)` wraps `MutationObserver` with debouncing, exclusion predicates, lifecycle callbacks, and the observed node as a callback argument.
+- `Node.observe(callback, options?)` wraps `MutationObserver` with optional debouncing, exclusion predicates, lifecycle callbacks, and the observed node as a callback argument. Set `debounce` to `false` to invoke each mutation callback directly.
 
 ```ts
 const observer = document.body.observe(
@@ -181,7 +181,10 @@ const observer = document.body.observe(
     console.log(records.length, node.ownText());
   },
   {
-    debounceMs: 250,
+    debounce: {
+      debounceMs: 250,
+      maxWaitMs: 1000,
+    },
     callOnStart: false,
     exclusions: [record => record.type === "attributes"],
   }
