@@ -1,4 +1,5 @@
 import { definePropertyIfAbsent } from '@/helpers/utils';
+import type { AwaitableAction, Predicate } from '@/types/lib';
 
 declare global {
   interface PromiseConstructor {
@@ -28,6 +29,21 @@ declare global {
      * @param onError A callback function to handle the error.
      */
     ignore(onError?: (e: unknown) => void): Promise<void | T>;
+
+    /**
+     * Invokes an action with the resolved value, then resolves with that same value.
+     *
+     * The action may complete synchronously or asynchronously.
+     */
+    tap(action: AwaitableAction<T>): Promise<T>;
+
+    /**
+     * Invokes an action with the resolved value only when the condition is met,
+     * then resolves with that same value.
+     *
+     * The action may complete synchronously or asynchronously.
+     */
+    tapIf(condition: Predicate<T>, action: AwaitableAction<T>): Promise<T>;
   }
 }
 
@@ -51,6 +67,22 @@ async function ignore<T>(this: Promise<T>, onError?: (e: unknown) => void): Prom
   }
 }
 
+function tap<T>(this: Promise<T>, action: AwaitableAction<T>): Promise<T> {
+  return this.then(async value => {
+    await action(value);
+    return value;
+  });
+}
+
+function tapIf<T>(this: Promise<T>, condition: Predicate<T>, action: AwaitableAction<T>): Promise<T> {
+  return this.then(async value => {
+    if (condition(value)) {
+      await action(value);
+    }
+    return value;
+  });
+}
+
 async function retry<T>(factory: () => Promise<T>, times: number, delayMs = 0): Promise<T> {
   try {
     return await factory();
@@ -70,4 +102,6 @@ definePropertyIfAbsent(Promise, 'delay', delayStatic);
 definePropertyIfAbsent(Promise, 'retry', retry);
 definePropertyIfAbsent(Promise.prototype, 'delay', delay);
 definePropertyIfAbsent(Promise.prototype, 'ignore', ignore);
+definePropertyIfAbsent(Promise.prototype, 'tap', tap);
+definePropertyIfAbsent(Promise.prototype, 'tapIf', tapIf);
 

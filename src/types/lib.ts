@@ -8,7 +8,13 @@ export type Optional<T> = T | undefined;
 export type Nullishable<T> = T | null | undefined;
 export type OneOrMany<T> = T | ArrayLike<T>;
 export type HTMLNode = HTMLElement | Document | Text | Comment;
-export type Awaitable<T> = T | Promise<T>;
+export type Awaitable<T> = T | PromiseLike<T>;
+
+/**
+ * Represents an action that may complete synchronously or asynchronously.
+ */
+export type AwaitableAction<T> = (value: T) => Awaitable<void>;
+
 export type Extractor<T = string> = [RegExp, (match: RegExpExecArray) => T];
 export type ArrayElement<ArrayType extends readonly unknown[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
