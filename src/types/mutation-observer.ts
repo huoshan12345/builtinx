@@ -1,4 +1,4 @@
-import type { Predicate } from './lib';
+import type { Nullable, Predicate } from './lib';
 
 /** 
  * A predicate function for MutationRecord.
@@ -38,6 +38,8 @@ export type NodeMutationCallbackParams = Parameters<NodeMutationCallback>;
 export class DebounceMutationCallbackOptions {
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
+  /** Maximum delay for a pending callback. Null disables the maximum wait. */
+  maxWaitMs: Nullable<number> = null;
   /** If true, triggers the callback on the leading edge of the debounce. */
   leading: boolean = true;
   /** If true, triggers the callback on the trailing edge of the debounce. */
@@ -75,6 +77,8 @@ export class MutationObserverOptions implements MutationObserverInit {
 
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
+  /** Maximum delay for a pending callback. Null disables the maximum wait. */
+  maxWaitMs: Nullable<number> = null;
   /** If true, triggers the callback on the leading edge of the debounce. */
   leading: boolean = true;
   /** If true, triggers the callback on the trailing edge of the debounce. */

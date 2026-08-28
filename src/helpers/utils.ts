@@ -7,6 +7,8 @@ import { DebounceOptions, type DebounceCallback } from '@/types/utils';
  *
  * Both `leading` and `trailing` default to true. When both are enabled, a single call runs
  * only on the leading edge; a trailing call runs only when a later call occurs in the window.
+ * When `maxWaitMs` is set, a pending call is invoked with the latest arguments once that
+ * maximum wait is reached, even if frequent calls keep resetting the debounce delay.
  * @param callback The function to debounce.
  * @param options An object containing debounce options.
  * @returns A new debounced function.
@@ -14,17 +16,49 @@ import { DebounceOptions, type DebounceCallback } from '@/types/utils';
 export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>, options: Partial<DebounceOptions<TArgs>>): DebounceCallback<TArgs> {
   const opts = new DebounceOptions(options);
   let timer: Nullable<ReturnType<typeof setTimeout>> = null;
-  let trailingArgs: TArgs | undefined;
-  let hasTrailingCall = false;
+  let maxWaitTimer: Nullable<ReturnType<typeof setTimeout>> = null;
+  let pendingArgs: TArgs | undefined;
   const cb = (...args: TArgs) => {
     opts.beforeCallback?.(...args);
     callback(...args);
     opts.afterCallback?.(...args);
   };
 
-  return function (...args: TArgs) {    
+  const invokePending = () => {
+    if (pendingArgs === undefined) {
+      return;
+    }
+
+    const args = pendingArgs;
+    pendingArgs = undefined;
+    cb(...args);
+  };
+
+  const clearMaxWaitTimer = () => {
+    if (maxWaitTimer != null) {
+      clearTimeout(maxWaitTimer);
+      maxWaitTimer = null;
+    }
+  };
+
+  const scheduleMaxWait = () => {
+    if (opts.maxWaitMs == null || maxWaitTimer != null || pendingArgs === undefined) {
+      return;
+    }
+
+    maxWaitTimer = setTimeout(() => {
+      maxWaitTimer = null;
+      invokePending();
+    }, opts.maxWaitMs);
+  };
+
+  return function (...args: TArgs) {
     if (opts.shouldSkip?.(...args) === true) {
       opts.onSkipped?.(...args);
+      return;
+    }
+
+    if (!opts.leading && !opts.trailing) {
       return;
     }
 
@@ -37,22 +71,20 @@ export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>,
       cb(...args);
     }
 
-    if (opts.trailing && (!isFirstCallInWindow || !opts.leading)) {
-      trailingArgs = args;
-      hasTrailingCall = true;
-    }
-
-    if (!opts.leading && !opts.trailing) {
-      return;
+    if (!isFirstCallInWindow || !opts.leading) {
+      if (opts.trailing || opts.maxWaitMs != null) {
+        pendingArgs = args;
+        scheduleMaxWait();
+      }
     }
 
     timer = setTimeout(() => {
       timer = null;
-      if (hasTrailingCall) {
-        const args = trailingArgs!;
-        trailingArgs = undefined;
-        hasTrailingCall = false;
-        cb(...args);
+      clearMaxWaitTimer();
+      if (opts.trailing) {
+        invokePending();
+      } else {
+        pendingArgs = undefined;
       }
     }, opts.debounceMs);
   };

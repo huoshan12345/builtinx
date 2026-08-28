@@ -255,6 +255,30 @@ describe('Node.prototype.observe', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
+  test('should invoke the callback at maxWaitMs during continuous mutations', () => {
+    node.observe(callback, {
+      debounceMs: 100,
+      maxWaitMs: 250,
+      leading: false,
+      callOnStart: false,
+    });
+
+    trigger([createMutation('attributes')]);
+    vi.advanceTimersByTime(80);
+    trigger([createMutation('attributes')]);
+    vi.advanceTimersByTime(80);
+    trigger([createMutation('attributes')]);
+    vi.advanceTimersByTime(80);
+    trigger([createMutation('childList')]);
+
+    vi.advanceTimersByTime(9);
+    expect(callback).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback.mock.calls[0][0][0].type).toBe('childList');
+  });
+
   test('should execute immediately when leading=true', () => {
     node.observe(callback, {
       leading: true,

@@ -14,6 +14,7 @@ describe('MutationObserverOptions', () => {
     expect(options.subtree).toBe(true);
 
     expect(options.debounceMs).toBe(1000);
+    expect(options.maxWaitMs).toBeNull();
     expect(options.leading).toBe(true);
     expect(options.trailing).toBe(true);
     expect(options.callOnStart).toBe(true);
@@ -121,6 +122,7 @@ describe('MutationObserverOptions', () => {
 
     // 确保扩展字段没有泄漏
     expect((native as any).debounceMs).toBeUndefined();
+    expect((native as any).maxWaitMs).toBeUndefined();
   });
 
   test('should allow chaining transformer updates', () => {

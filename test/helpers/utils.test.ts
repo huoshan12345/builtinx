@@ -141,6 +141,112 @@ describe('debounce (enhanced)', () => {
     expect(fn).toHaveBeenCalledWith(3);
   });
 
+  test('should invoke a pending call at maxWaitMs during continuous calls', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      leading: false,
+      debounceMs: 100,
+      maxWaitMs: 250,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(80);
+    debounced(2);
+    vi.advanceTimersByTime(80);
+    debounced(3);
+    vi.advanceTimersByTime(80);
+    debounced(4);
+
+    vi.advanceTimersByTime(9);
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(4);
+
+    vi.advanceTimersByTime(80);
+    debounced(5);
+    vi.advanceTimersByTime(80);
+    debounced(6);
+    vi.advanceTimersByTime(80);
+    debounced(7);
+    vi.advanceTimersByTime(80);
+    debounced(8);
+
+    vi.advanceTimersByTime(9);
+    expect(fn).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1);
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(8);
+  });
+
+  test('should not impose a maximum wait when maxWaitMs is null', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      leading: false,
+      debounceMs: 100,
+      maxWaitMs: null,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(80);
+    debounced(2);
+    vi.advanceTimersByTime(80);
+    debounced(3);
+    vi.advanceTimersByTime(80);
+    debounced(4);
+    vi.advanceTimersByTime(80);
+
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(20);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(4);
+  });
+
+  test('should force a pending call when only the leading edge is enabled', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      leading: true,
+      trailing: false,
+      debounceMs: 100,
+      maxWaitMs: 250,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(80);
+    debounced(2);
+    vi.advanceTimersByTime(80);
+    debounced(3);
+    vi.advanceTimersByTime(80);
+    debounced(4);
+
+    expect(fn).toHaveBeenCalledExactlyOnceWith(1);
+
+    vi.advanceTimersByTime(90);
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(4);
+  });
+
+  test('should not let skipped calls reset maxWaitMs', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      leading: false,
+      debounceMs: 500,
+      maxWaitMs: 300,
+      shouldSkip: (value: number) => value < 0,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(150);
+    debounced(-1);
+    vi.advanceTimersByTime(149);
+
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(1);
+  });
+
   test('should pass arguments to before/after callbacks', () => {
     const before = vi.fn();
     const after = vi.fn();

@@ -74,6 +74,7 @@ function observe(this: Node, callback: NodeMutationCallback, options?: Partial<M
 
   const debounceOptions = {
     debounceMs: opts.debounceMs,
+    maxWaitMs: opts.maxWaitMs,
     leading: opts.leading,
     trailing: opts.trailing,
     exclusions: opts.resolvedExclusions,

@@ -1,3 +1,5 @@
+import type { Nullable } from './lib';
+
 export type DebounceCallback<TArgs extends any[]> = (...args: TArgs) => void;
 
 /**
@@ -6,6 +8,8 @@ export type DebounceCallback<TArgs extends any[]> = (...args: TArgs) => void;
 export class DebounceOptions<TArgs extends any[]> {
   /** The number of milliseconds to delay; default is 1000ms. */
   debounceMs: number = 1000;
+  /** An optional number specifying the maximum time a pending call may be delayed. */
+  maxWaitMs?: number;
   /** If true, invokes the first call in a debounce window immediately; default is true. */
   leading: boolean = true;
   /** If true, invokes the final call in a debounce window after the delay; default is true. */
