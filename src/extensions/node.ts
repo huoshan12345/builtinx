@@ -1,5 +1,5 @@
-import { definePropertyIfAbsent } from '@/helpers/utils';
-import { DebounceMutationCallbackOptions, MutationObserverOptions, type NodeMutationCallback } from '@/types/mutation-observer';
+import { debounce, definePropertyIfAbsent } from '@/helpers/utils';
+import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '@/types/mutation-observer-options';
 
 declare global {
   interface Node {
@@ -20,9 +20,9 @@ declare global {
     isNewLineTextNode(): boolean;
 
     /**
-     * Observe mutations on this node and its subtree.     
+     * Observe mutations on this node and its subtree.
      */
-    observe(callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>): MutationObserver;
+    observe(callback: NodeMutationCallback, options?: MutationObserverOptionsInit): MutationObserver;
   }
 }
 
@@ -51,29 +51,54 @@ function isTextNode(this: Node): boolean {
   return this.nodeType === Node.TEXT_NODE;
 };
 
-function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
+function createInitialMutationRecord(target: Node): MutationRecord {
+  const document = target.ownerDocument ?? target as Document;
+  const emptyNodes = document.createDocumentFragment().childNodes;
+
+  return {
+    type: 'childList',
+    target,
+    addedNodes: emptyNodes,
+    removedNodes: emptyNodes,
+    previousSibling: null,
+    nextSibling: null,
+    attributeName: null,
+    attributeNamespace: null,
+    oldValue: null,
+  };
+}
+
+function observe(this: Node, callback: NodeMutationCallback, options?: MutationObserverOptionsInit) {
   const opts = new MutationObserverOptions(options);
   const node = this;
 
-  const debounceOptions = {
-    debounceMs: opts.debounceMs,
-    leading: opts.leading,
-    trailing: opts.trailing,
-    exclusions: opts.resolvedExclusions,
-    beforeCallback: (records, obs) => opts.beforeCallback?.(records, obs, node),
-    afterCallback: (records, obs) => opts.afterCallback?.(records, obs, node),
-    onSkipped: (records, obs) => opts.onSkipped?.(records, obs, node),
-  } as Partial<DebounceMutationCallbackOptions>;
+  const invokeCallback: MutationCallback = (records, observer) => {
+    opts.beforeCallback?.(records, observer, node);
+    callback(records, observer, node);
+    opts.afterCallback?.(records, observer, node);
+  };
 
-  const observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback(
-    (records, obs) => callback(records, obs, node),
-    debounceOptions),
-  );
+  const scheduleCallback = opts.debounce == null
+    ? invokeCallback
+    : debounce(invokeCallback, opts.debounce);
+
+  const observer = new MutationObserver((records, obs) => {
+    const filtered = records.filter(record =>
+      !opts.exclusions.some(exclusion => exclusion(record))
+    );
+    records.replaceFrom(filtered);
+
+    if (filtered.length === 0) {
+      opts.onSkipped?.(records, obs, node);
+      return;
+    }
+
+    scheduleCallback(records, obs);
+  });
 
   if (opts.callOnStart) {
-    opts.beforeCallback?.([], observer, node);
-    callback([], observer, node);
-    opts.afterCallback?.([], observer, node);
+    const records = [createInitialMutationRecord(node)];
+    invokeCallback(records, observer);
   }
 
   observer.observe(node, opts.toNativeInit());

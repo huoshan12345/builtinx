@@ -77,6 +77,69 @@ describe("Promise.prototype.ignore", () => {
   });
 });
 
+describe("Promise.prototype.tap", () => {
+  it("invokes the action and preserves the resolved value", async () => {
+    const action = vi.fn();
+
+    await expect(Promise.resolve(5).tap(action)).resolves.toBe(5);
+    expect(action).toHaveBeenCalledExactlyOnceWith(5);
+  });
+
+  it("waits for an asynchronous action", async () => {
+    let completed = false;
+    const promise = Promise.resolve("ok").tap(async () => {
+      await Promise.delay(100);
+      completed = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(99);
+    expect(completed).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(promise).resolves.toBe("ok");
+    expect(completed).toBe(true);
+  });
+
+  it("propagates errors from the action", async () => {
+    await expect(
+      Promise.resolve(5).tap(() => {
+        throw new Error("tap failed");
+      })
+    ).rejects.toThrow("tap failed");
+  });
+
+  it("does not invoke the action for a rejected promise", async () => {
+    const action = vi.fn();
+
+    await expect(Promise.reject(new Error("source failed")).tap(action)).rejects.toThrow("source failed");
+    expect(action).not.toHaveBeenCalled();
+  });
+});
+
+describe("Promise.prototype.tapIf", () => {
+  it("invokes the action only when the condition is true", async () => {
+    const action = vi.fn();
+
+    await expect(Promise.resolve(4).tapIf(value => value % 2 === 0, action)).resolves.toBe(4);
+    expect(action).toHaveBeenCalledExactlyOnceWith(4);
+  });
+
+  it("skips the action when the condition is false", async () => {
+    const action = vi.fn();
+
+    await expect(Promise.resolve(3).tapIf(value => value % 2 === 0, action)).resolves.toBe(3);
+    expect(action).not.toHaveBeenCalled();
+  });
+
+  it("propagates errors from the condition", async () => {
+    await expect(
+      Promise.resolve(5).tapIf(() => {
+        throw new Error("condition failed");
+      }, () => { })
+    ).rejects.toThrow("condition failed");
+  });
+});
+
 describe("Promise.retry", () => {
   it("resolves on first success", async () => {
     const factory = vi.fn(() => Promise.resolve("ok"));

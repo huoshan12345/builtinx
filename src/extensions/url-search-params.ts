@@ -79,6 +79,7 @@ declare global {
     /**
      * Deletes the key only when it exists.
      *
+     * When `value` is provided, only matching values are deleted.
      * Returns whether the key was deleted.
      */
     tryDelete(key: string, value?: string): boolean;
@@ -196,4 +197,4 @@ definePropertyIfAbsent(URLSearchParams.prototype, "trySet", trySet);
 definePropertyIfAbsent(URLSearchParams.prototype, "add", add);
 definePropertyIfAbsent(URLSearchParams.prototype, "isEmpty", isEmpty);
 definePropertyIfAbsent(URLSearchParams.prototype, "isNotEmpty", isNotEmpty);
-definePropertyIfAbsent(URLSearchParams.prototype, "tryDelete", tryDelete); 
+definePropertyIfAbsent(URLSearchParams.prototype, "tryDelete", tryDelete);

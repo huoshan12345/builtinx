@@ -1,4 +1,5 @@
-import { DebounceMutationCallbackOptions, type NodeMutationCallback } from '@/types/mutation-observer';
+import { debounce } from './utils';
+import { DebounceMutationOptions } from '@/types/debounce-mutation-options';
 
 export interface Node {
   /**
@@ -7,17 +8,18 @@ export interface Node {
    * @param options Configuration options for debouncing the callback.
    * @returns A debounced MutationCallback that can be used with a MutationObserver.
    */
-  debounceMutationCallback(callback: MutationCallback, options: Partial<DebounceMutationCallbackOptions>): MutationCallback;
+  debounceMutationCallback(callback: MutationCallback, options: Partial<DebounceMutationOptions>): MutationCallback;
 }
 
 export const Node: Node = {
-  debounceMutationCallback(callback: MutationCallback, options: Partial<DebounceMutationCallbackOptions>): MutationCallback {
-    const opts = new DebounceMutationCallbackOptions(options);
-    return BuiltinX.debounce(callback, {
+  debounceMutationCallback(callback: MutationCallback, options: Partial<DebounceMutationOptions>): MutationCallback {
+    const opts = new DebounceMutationOptions(options);
+    return debounce(callback, {
       beforeCallback: opts.beforeCallback,
       afterCallback: opts.afterCallback,
       onSkipped: opts.onSkipped,
       debounceMs: opts.debounceMs,
+      maxWaitMs: opts.maxWaitMs,
       leading: opts.leading,
       trailing: opts.trailing,
       shouldSkip: records => {
