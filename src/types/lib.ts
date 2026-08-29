@@ -13,7 +13,7 @@ export type Awaitable<T> = T | PromiseLike<T>;
 /**
  * Represents an action that may complete synchronously or asynchronously.
  */
-export type AwaitableAction<T> = (value: T) => Awaitable<void>;
+export type AwaitableAction<T> = (value: T) => Awaitable<unknown>;
 
 export type Extractor<T = string> = [RegExp, (match: RegExpExecArray) => T];
 export type ArrayElement<ArrayType extends readonly unknown[]> =
