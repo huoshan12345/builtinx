@@ -85,6 +85,10 @@ describe("Promise.prototype.tap", () => {
     expect(action).toHaveBeenCalledExactlyOnceWith(5);
   });
 
+  it("accepts an expression-bodied action that returns a value", async () => {
+    await expect(Promise.resolve(5).tap(value => value.toString())).resolves.toBe(5);
+  });
+
   it("waits for an asynchronous action", async () => {
     let completed = false;
     const promise = Promise.resolve("ok").tap(async () => {
