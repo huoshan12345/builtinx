@@ -25,6 +25,11 @@ interface WaitingState<TArgs extends any[]> {
  * both edges are disabled. Values shorter than `debounceMs` are treated as `debounceMs`.
  * With `trailing` disabled, stopping activity before the maximum wait is reached does not
  * invoke the final pending call.
+ *
+ * Leading-edge callbacks run synchronously in the caller's current call stack. Trailing-edge
+ * and maximum-wait callbacks run in a timer callback. Errors thrown by `beforeCallback`,
+ * `callback`, or `afterCallback` are not caught and therefore follow the propagation semantics
+ * of the context in which that callback runs.
  * @param callback The function to debounce.
  * @param options An object containing debounce options.
  * @returns A new debounced function.
