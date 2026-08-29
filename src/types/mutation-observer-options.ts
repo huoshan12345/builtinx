@@ -112,7 +112,7 @@ export class MutationObserverOptions implements MutationObserverInit {
     return this._debounce ?? undefined;
   }
 
-  private static _default: MutationObserverOptionsInit;
+  private static _default: MutationObserverOptionsInit = { debounce: {} };
   public static get default(): MutationObserverOptionsInit {
     return MutationObserverOptions._default;
   }
