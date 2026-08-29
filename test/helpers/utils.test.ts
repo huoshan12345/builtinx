@@ -1,4 +1,5 @@
-import { debounce } from '@/helpers/utils';
+// import { debounce } from '@/helpers/utils';
+import { debounceWithStateMachine as debounce } from '@/helpers/debounce-state-machine';
 
 describe('debounce (enhanced)', () => {
 

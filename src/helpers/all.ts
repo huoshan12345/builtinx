@@ -1,5 +1,6 @@
 export * from './color';
 export * from './clipboard';
+export * from './debounce-state-machine';
 export * from './element';
 export * from './file-info';
 export * from './http';

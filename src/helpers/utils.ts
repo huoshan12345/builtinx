@@ -1,5 +1,5 @@
 import type { Nullable } from '@/types/lib';
-import { DebounceOptions, type DebounceCallback } from '@/types/utils';
+import { DebounceOptions, type DebounceCallback } from '@/types/debounce-options';
 
 /**
  * Creates a debounced function that controls whether the callback runs at the leading edge,
