@@ -1,10 +1,21 @@
-import { MutationObserverOptions, type MutationExclusion } from '@/types/mutation-observer';
+import {
+  MutationObserverDebounceOptions,
+  MutationObserverOptions,
+  type MutationExclusion,
+} from '@/types/mutation-observer';
 
 describe('MutationObserverOptions', () => {
 
   beforeEach(() => {
-    // 重置全局 default，避免测试污染
-    MutationObserverOptions.default = {};
+    MutationObserverOptions.default = { debounce: false };
+    MutationObserverOptions.default = {
+      debounce: {
+        debounceMs: 1000,
+        maxWaitMs: undefined,
+        leading: true,
+        trailing: true,
+      },
+    };
   });
 
   test('should initialize with default values', () => {
@@ -13,10 +24,11 @@ describe('MutationObserverOptions', () => {
     expect(options.childList).toBe(true);
     expect(options.subtree).toBe(true);
 
-    expect(options.debounceMs).toBe(1000);
-    expect(options.maxWaitMs).toBeNull();
-    expect(options.leading).toBe(true);
-    expect(options.trailing).toBe(true);
+    expect(options.debounce).toBeInstanceOf(MutationObserverDebounceOptions);
+    expect(options.debounce?.debounceMs).toBe(1000);
+    expect(options.debounce?.maxWaitMs).toBeUndefined();
+    expect(options.debounce?.leading).toBe(true);
+    expect(options.debounce?.trailing).toBe(true);
     expect(options.callOnStart).toBe(true);
 
     expect(options.resolvedExclusions).toEqual([]);
@@ -74,38 +86,73 @@ describe('MutationObserverOptions', () => {
 
   test('should merge static default with constructor options', () => {
     MutationObserverOptions.default = {
-      debounceMs: 500,
-      leading: false
+      debounce: {
+        debounceMs: 500,
+        leading: false,
+      },
     };
 
     const options = new MutationObserverOptions({
-      leading: true
+      debounce: {
+        leading: true,
+      },
     });
 
-    expect(options.debounceMs).toBe(500);   // 来自 default
-    expect(options.leading).toBe(true);   // 被 constructor 覆盖
+    expect(options.debounce?.debounceMs).toBe(500);
+    expect(options.debounce?.leading).toBe(true);
   });
 
   test('should accumulate static default', () => {
     MutationObserverOptions.default = {
-      debounceMs: 500
+      debounce: {
+        debounceMs: 500,
+      },
     };
 
     MutationObserverOptions.default = {
-      leading: false
+      debounce: {
+        leading: false,
+      },
     };
 
     const options = new MutationObserverOptions();
 
-    expect(options.debounceMs).toBe(500);
-    expect(options.leading).toBe(false);
+    expect(options.debounce?.debounceMs).toBe(500);
+    expect(options.debounce?.leading).toBe(false);
+  });
+
+  test('should disable debounce explicitly', () => {
+    const options = new MutationObserverOptions({
+      debounce: false,
+    });
+
+    expect(options.debounce).toBeNull();
+  });
+
+  test('should allow an instance to re-enable a disabled global default', () => {
+    MutationObserverOptions.default = {
+      debounce: false,
+    };
+
+    expect(new MutationObserverOptions().debounce).toBeNull();
+
+    const options = new MutationObserverOptions({
+      debounce: {
+        debounceMs: 250,
+      },
+    });
+
+    expect(options.debounce).toBeInstanceOf(MutationObserverDebounceOptions);
+    expect(options.debounce?.debounceMs).toBe(250);
   });
 
   test('toNativeInit should only include MutationObserverInit fields', () => {
     const options = new MutationObserverOptions({
       attributes: true,
-      debounceMs: 2000,
-      leading: false
+      debounce: {
+        debounceMs: 2000,
+        leading: false,
+      },
     });
 
     const native = options.toNativeInit();
@@ -121,8 +168,7 @@ describe('MutationObserverOptions', () => {
     });
 
     // 确保扩展字段没有泄漏
-    expect((native as any).debounceMs).toBeUndefined();
-    expect((native as any).maxWaitMs).toBeUndefined();
+    expect((native as any).debounce).toBeUndefined();
   });
 
   test('should allow chaining transformer updates', () => {

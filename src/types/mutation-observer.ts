@@ -1,22 +1,22 @@
-import type { Nullable, Predicate } from './lib';
+import type { Predicate } from './lib';
 
-/** 
+/**
  * A predicate function for MutationRecord.
  * @returns true if the mutation should be IGNORED (excluded).
  */
 export type MutationExclusion = (record: MutationRecord) => boolean;
 
-/** 
+/**
  * A transformation function to modify the existing list of exclude rules.
  */
 export type MutationExclusionTransformer = (prevExcludes: MutationExclusion[]) => MutationExclusion[];
 
-/** 
+/**
  * Input type for the excludes property: a direct array or a transformer function.
  */
 export type MutationExclusionsInput = MutationExclusion[] | MutationExclusionTransformer;
 
-/** 
+/**
  * Enhanced callback including the target node being observed.
  */
 export type NodeMutationCallback = (
@@ -38,8 +38,8 @@ export type NodeMutationCallbackParams = Parameters<NodeMutationCallback>;
 export class DebounceMutationCallbackOptions {
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
-  /** Maximum delay for a pending callback. Null disables the maximum wait. */
-  maxWaitMs: Nullable<number> = null;
+  /** An optional number specifying the maximum time a pending call may be delayed. */
+  maxWaitMs?: number;
   /** If true, triggers the callback on the leading edge of the debounce. */
   leading: boolean = true;
   /** If true, triggers the callback on the trailing edge of the debounce. */
@@ -60,6 +60,59 @@ export class DebounceMutationCallbackOptions {
 }
 
 /**
+ * Scheduling options for debouncing mutation observer callbacks.
+ */
+export class MutationObserverDebounceOptions {
+  /** Debounce interval in milliseconds. */
+  debounceMs: number = 1000;
+  /** An optional number specifying the maximum time a pending call may be delayed. */
+  maxWaitMs?: number;
+  /** If true, triggers the callback on the leading edge of the debounce. */
+  leading: boolean = true;
+  /** If true, triggers the callback on the trailing edge of the debounce. */
+  trailing: boolean = true;
+
+  constructor(init?: Partial<MutationObserverDebounceOptions>) {
+    Object.assign(this, init);
+  }
+}
+
+/**
+ * Input accepted by {@link MutationObserverOptions}.
+ *
+ * Set `debounce` to false to invoke callbacks without debounce scheduling.
+ * Omit it to use the default debounce configuration.
+ */
+export interface MutationObserverOptionsInit extends MutationObserverInit {
+  debounce?: false | Partial<MutationObserverDebounceOptions>;
+  callOnStart?: boolean;
+  exclusions?: MutationExclusionsInput;
+  beforeCallback?: NodeMutationCallback;
+  afterCallback?: NodeMutationCallback;
+  onSkipped?: NodeMutationCallback;
+}
+
+type MutationObserverDebounceInput = MutationObserverOptionsInit['debounce'];
+
+function mergeDebounceInput(
+  current: MutationObserverDebounceInput,
+  next: MutationObserverDebounceInput,
+): MutationObserverDebounceInput {
+  if (next === undefined) {
+    return current;
+  }
+
+  if (next === false) {
+    return false;
+  }
+
+  return {
+    ...(current === false ? undefined : current),
+    ...next,
+  };
+}
+
+/**
  * Configuration for an enhanced MutationObserver.
  * Custom properties handle debouncing and mutation filtering (exclusion logic).
  */
@@ -75,14 +128,8 @@ export class MutationObserverOptions implements MutationObserverInit {
 
   // --- Extended Properties ---
 
-  /** Debounce interval in milliseconds. */
-  debounceMs: number = 1000;
-  /** Maximum delay for a pending callback. Null disables the maximum wait. */
-  maxWaitMs: Nullable<number> = null;
-  /** If true, triggers the callback on the leading edge of the debounce. */
-  leading: boolean = true;
-  /** If true, triggers the callback on the trailing edge of the debounce. */
-  trailing: boolean = true;
+  /** Resolved debounce configuration, or null when debouncing is disabled. */
+  debounce: MutationObserverDebounceOptions | null;
   /** If true, invokes the callback once with a synthetic mutation record targeting the observed node. */
   callOnStart: boolean = true;
   /** Optional callback to be executed before the main callback. */
@@ -99,7 +146,7 @@ export class MutationObserverOptions implements MutationObserverInit {
     return this._exclusions;
   }
 
-  /** 
+  /**
    * Set the exclusions either by providing a new array or by passing a transformer function.
    * The transformer receives the current list of exclusions and should return a new list.
    */
@@ -116,22 +163,39 @@ export class MutationObserverOptions implements MutationObserverInit {
     return this._exclusions;
   }
 
-  private static _default: Partial<MutationObserverOptions> = {};
+  private static _default: MutationObserverOptionsInit = {};
 
-  public static get default(): Partial<MutationObserverOptions> {
+  public static get default(): MutationObserverOptionsInit {
     return MutationObserverOptions._default;
   }
 
-  public static set default(value: Partial<MutationObserverOptions>) {
+  public static set default(value: MutationObserverOptionsInit) {
+    const debounce = mergeDebounceInput(MutationObserverOptions._default.debounce, value.debounce);
     MutationObserverOptions._default = {
       ...MutationObserverOptions._default,
-      ...value
+      ...value,
+      debounce,
     };
   }
 
-  constructor(init?: Partial<MutationObserverOptions>) {
+  constructor(init: MutationObserverOptionsInit = {}) {
     // Priority: Instance defaults < Global defaults < Constructor arguments
-    Object.assign(this, MutationObserverOptions._default, init);
+    this.apply(MutationObserverOptions._default);
+    this.apply(init);
+
+    const debounce = mergeDebounceInput(MutationObserverOptions._default.debounce, init.debounce);
+    this.debounce = debounce === false
+      ? null
+      : new MutationObserverDebounceOptions(debounce);
+  }
+
+  private apply(init: MutationObserverOptionsInit): void {
+    const { debounce: _, exclusions, ...options } = init;
+    Object.assign(this, options);
+
+    if (exclusions !== undefined) {
+      this.exclusions = exclusions;
+    }
   }
 
   /** Extracts standard MutationObserverInit properties only. */

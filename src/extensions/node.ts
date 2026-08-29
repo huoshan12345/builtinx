@@ -1,5 +1,5 @@
-import { definePropertyIfAbsent } from '@/helpers/utils';
-import { DebounceMutationCallbackOptions, MutationObserverOptions, type NodeMutationCallback } from '@/types/mutation-observer';
+import { debounce, definePropertyIfAbsent } from '@/helpers/utils';
+import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '@/types/mutation-observer';
 
 declare global {
   interface Node {
@@ -22,7 +22,7 @@ declare global {
     /**
      * Observe mutations on this node and its subtree.     
      */
-    observe(callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>): MutationObserver;
+    observe(callback: NodeMutationCallback, options?: MutationObserverOptionsInit): MutationObserver;
   }
 }
 
@@ -68,25 +68,33 @@ function createInitialMutationRecord(target: Node): MutationRecord {
   };
 }
 
-function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
+function observe(this: Node, callback: NodeMutationCallback, options?: MutationObserverOptionsInit) {
   const opts = new MutationObserverOptions(options);
   const node = this;
 
-  const debounceOptions = {
-    debounceMs: opts.debounceMs,
-    maxWaitMs: opts.maxWaitMs,
-    leading: opts.leading,
-    trailing: opts.trailing,
-    exclusions: opts.resolvedExclusions,
-    beforeCallback: (records, obs) => opts.beforeCallback?.(records, obs, node),
-    afterCallback: (records, obs) => opts.afterCallback?.(records, obs, node),
-    onSkipped: (records, obs) => opts.onSkipped?.(records, obs, node),
-  } as Partial<DebounceMutationCallbackOptions>;
+  const invokeCallback: MutationCallback = (records, observer) => {
+    opts.beforeCallback?.(records, observer, node);
+    callback(records, observer, node);
+    opts.afterCallback?.(records, observer, node);
+  };
 
-  const observer = new MutationObserver(BuiltinX.Node.debounceMutationCallback(
-    (records, obs) => callback(records, obs, node),
-    debounceOptions),
-  );
+  const scheduleCallback = opts.debounce === null
+    ? invokeCallback
+    : debounce(invokeCallback, opts.debounce);
+
+  const observer = new MutationObserver((records, obs) => {
+    const filtered = records.filter(record =>
+      !opts.resolvedExclusions.some(exclusion => exclusion(record))
+    );
+    records.replaceFrom(filtered);
+
+    if (filtered.length === 0) {
+      opts.onSkipped?.(records, obs, node);
+      return;
+    }
+
+    scheduleCallback(records, obs);
+  });
 
   if (opts.callOnStart) {
     const records = [createInitialMutationRecord(node)];

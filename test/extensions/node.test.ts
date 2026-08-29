@@ -240,8 +240,10 @@ describe('Node.prototype.observe', () => {
 
   test('should debounce callback on the trailing edge', () => {
     node.observe(callback, {
-      debounceMs: 100,
-      leading: false,
+      debounce: {
+        debounceMs: 100,
+        leading: false,
+      },
       callOnStart: false,
     });
 
@@ -255,11 +257,28 @@ describe('Node.prototype.observe', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
+  test('should invoke callback immediately when debounce is disabled', () => {
+    node.observe(callback, {
+      debounce: false,
+      callOnStart: false,
+    });
+
+    trigger([createMutation('attributes')]);
+    trigger([createMutation('childList')]);
+
+    expect(callback).toHaveBeenCalledTimes(2);
+
+    vi.advanceTimersByTime(1000);
+    expect(callback).toHaveBeenCalledTimes(2);
+  });
+
   test('should invoke the callback at maxWaitMs during continuous mutations', () => {
     node.observe(callback, {
-      debounceMs: 100,
-      maxWaitMs: 250,
-      leading: false,
+      debounce: {
+        debounceMs: 100,
+        maxWaitMs: 250,
+        leading: false,
+      },
       callOnStart: false,
     });
 
@@ -281,8 +300,10 @@ describe('Node.prototype.observe', () => {
 
   test('should execute immediately when leading=true', () => {
     node.observe(callback, {
-      leading: true,
-      trailing: false,
+      debounce: {
+        leading: true,
+        trailing: false,
+      },
       callOnStart: false,
     });
 
@@ -311,6 +332,22 @@ describe('Node.prototype.observe', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('childList');
+  });
+
+  test('should still apply exclusions when debounce is disabled', () => {
+    const onSkipped = vi.fn();
+
+    node.observe(callback, {
+      debounce: false,
+      callOnStart: false,
+      exclusions: [record => record.type === 'attributes'],
+      onSkipped,
+    });
+
+    trigger([createMutation('attributes')]);
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(onSkipped).toHaveBeenCalledTimes(1);
   });
 
   test('should skip callback when all mutations excluded', () => {

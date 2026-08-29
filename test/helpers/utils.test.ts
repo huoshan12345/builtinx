@@ -180,12 +180,11 @@ describe('debounce (enhanced)', () => {
     expect(fn).toHaveBeenLastCalledWith(8);
   });
 
-  test('should not impose a maximum wait when maxWaitMs is null', () => {
+  test('should not impose a maximum wait when maxWaitMs is omitted', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, {
       leading: false,
       debounceMs: 100,
-      maxWaitMs: null,
     });
 
     debounced(1);
