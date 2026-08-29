@@ -2,7 +2,7 @@ import {
   MutationObserverDebounceOptions,
   MutationObserverOptions,
   type MutationExclusion,
-} from '@/types/mutation-observer';
+} from '@/types/mutation-observer-options';
 
 describe('MutationObserverOptions', () => {
 
@@ -126,7 +126,7 @@ describe('MutationObserverOptions', () => {
       debounce: false,
     });
 
-    expect(options.debounce).toBeNull();
+    expect(options.debounce).toBeUndefined();
   });
 
   test('should allow an instance to re-enable a disabled global default', () => {
@@ -134,7 +134,7 @@ describe('MutationObserverOptions', () => {
       debounce: false,
     };
 
-    expect(new MutationObserverOptions().debounce).toBeNull();
+    expect(new MutationObserverOptions().debounce).toBeUndefined();
 
     const options = new MutationObserverOptions({
       debounce: {
@@ -149,6 +149,7 @@ describe('MutationObserverOptions', () => {
   test('toNativeInit should only include MutationObserverInit fields', () => {
     const options = new MutationObserverOptions({
       attributes: true,
+      exclusions: m => m.append(x => true),
       debounce: {
         debounceMs: 2000,
         leading: false,

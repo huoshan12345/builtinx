@@ -1,5 +1,5 @@
 import { debounce, definePropertyIfAbsent } from '@/helpers/utils';
-import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '@/types/mutation-observer';
+import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '@/types/mutation-observer-options';
 
 declare global {
   interface Node {
@@ -68,7 +68,7 @@ function createInitialMutationRecord(target: Node): MutationRecord {
   };
 }
 
-function observe(this: Node, callback: NodeMutationCallback, options?: MutationObserverOptionsInit) {
+function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
   const opts = new MutationObserverOptions(options);
   const node = this;
 
@@ -78,7 +78,7 @@ function observe(this: Node, callback: NodeMutationCallback, options?: MutationO
     opts.afterCallback?.(records, observer, node);
   };
 
-  const scheduleCallback = opts.debounce === null
+  const scheduleCallback = opts.debounce == null
     ? invokeCallback
     : debounce(invokeCallback, opts.debounce);
 

@@ -1,4 +1,4 @@
-import type { Predicate } from './lib';
+import { shallowMerge } from '@/helpers/utils';
 
 /**
  * A predicate function for MutationRecord.
@@ -31,33 +31,6 @@ export type MutationCallbackParams = Parameters<MutationCallback>;
 /** Parameters received by a NodeMutationCallback */
 export type NodeMutationCallbackParams = Parameters<NodeMutationCallback>;
 
-/**
- * Options for the enhanced MutationObserver, extending the standard MutationObserverInit.
- * Includes additional properties for debouncing and mutation exclusion logic.
- */
-export class DebounceMutationCallbackOptions {
-  /** Debounce interval in milliseconds. */
-  debounceMs: number = 1000;
-  /** An optional number specifying the maximum time a pending call may be delayed. */
-  maxWaitMs?: number;
-  /** If true, triggers the callback on the leading edge of the debounce. */
-  leading: boolean = true;
-  /** If true, triggers the callback on the trailing edge of the debounce. */
-  trailing: boolean = true;
-  /** List of predicates to determine which mutations should be excluded (ignored). */
-  exclusions: Predicate<MutationRecord>[] = [];
-
-  /** Optional callback to be executed before the main callback. */
-  beforeCallback?: MutationCallback;
-  /** Optional callback to be executed after the main callback. */
-  afterCallback?: MutationCallback;
-  /** Optional function that will be called when the callback is skipped. */
-  onSkipped?: MutationCallback;
-
-  constructor(options: Partial<DebounceMutationCallbackOptions>) {
-    Object.assign(this, options);
-  }
-}
 
 /**
  * Scheduling options for debouncing mutation observer callbacks.
@@ -66,7 +39,7 @@ export class MutationObserverDebounceOptions {
   /** Debounce interval in milliseconds. */
   debounceMs: number = 1000;
   /** An optional number specifying the maximum time a pending call may be delayed. */
-  maxWaitMs?: number;
+  maxWaitMs?: number = 1000;
   /** If true, triggers the callback on the leading edge of the debounce. */
   leading: boolean = true;
   /** If true, triggers the callback on the trailing edge of the debounce. */
@@ -77,40 +50,15 @@ export class MutationObserverDebounceOptions {
   }
 }
 
-/**
- * Input accepted by {@link MutationObserverOptions}.
- *
- * Set `debounce` to false to invoke callbacks without debounce scheduling.
- * Omit it to use the default debounce configuration.
- */
-export interface MutationObserverOptionsInit extends MutationObserverInit {
-  debounce?: false | Partial<MutationObserverDebounceOptions>;
-  callOnStart?: boolean;
-  exclusions?: MutationExclusionsInput;
-  beforeCallback?: NodeMutationCallback;
-  afterCallback?: NodeMutationCallback;
-  onSkipped?: NodeMutationCallback;
+export type MutationObserverDebounceOptionsInput = Partial<MutationObserverDebounceOptions> | false;
+
+
+export interface MutationObserverOptionsOverrides {
+  exclusions: MutationExclusionsInput;
+  debounce: MutationObserverDebounceOptionsInput;
 }
 
-type MutationObserverDebounceInput = MutationObserverOptionsInit['debounce'];
-
-function mergeDebounceInput(
-  current: MutationObserverDebounceInput,
-  next: MutationObserverDebounceInput,
-): MutationObserverDebounceInput {
-  if (next === undefined) {
-    return current;
-  }
-
-  if (next === false) {
-    return false;
-  }
-
-  return {
-    ...(current === false ? undefined : current),
-    ...next,
-  };
-}
+export type MutationObserverOptionsInit = Partial<Omit<MutationObserverOptions, keyof MutationObserverOptionsOverrides> & Partial<MutationObserverOptionsOverrides>>;
 
 /**
  * Configuration for an enhanced MutationObserver.
@@ -126,10 +74,6 @@ export class MutationObserverOptions implements MutationObserverInit {
   childList: boolean = true;
   subtree: boolean = true;
 
-  // --- Extended Properties ---
-
-  /** Resolved debounce configuration, or null when debouncing is disabled. */
-  debounce: MutationObserverDebounceOptions | null;
   /** If true, invokes the callback once with a synthetic mutation record targeting the observed node. */
   callOnStart: boolean = true;
   /** Optional callback to be executed before the main callback. */
@@ -140,12 +84,10 @@ export class MutationObserverOptions implements MutationObserverInit {
   onSkipped?: NodeMutationCallback;
 
   private _exclusions: MutationExclusion[] = [];
-
   /** Get the current list of mutation exclusion predicates. */
   public get exclusions(): MutationExclusion[] {
     return this._exclusions;
   }
-
   /**
    * Set the exclusions either by providing a new array or by passing a transformer function.
    * The transformer receives the current list of exclusions and should return a new list.
@@ -158,14 +100,24 @@ export class MutationObserverOptions implements MutationObserverInit {
     }
   }
 
-  private static _default: MutationObserverOptionsInit = {};
+  private _debounce?: MutationObserverDebounceOptions;
+  public set debounce(value: MutationObserverDebounceOptionsInput) {
+    if (value) {
+      this._debounce = new MutationObserverDebounceOptions(value);
+    } else {
+      this._debounce = undefined;
+    }
+  }
+  public get debounce(): MutationObserverDebounceOptions | undefined {
+    return this._debounce ?? undefined;
+  }
 
+  private static _default: MutationObserverOptionsInit;
   public static get default(): MutationObserverOptionsInit {
     return MutationObserverOptions._default;
   }
-
   public static set default(value: MutationObserverOptionsInit) {
-    const debounce = mergeDebounceInput(MutationObserverOptions._default.debounce, value.debounce);
+    const debounce = shallowMergeDebounceOptions(MutationObserverOptions._default?.debounce, value.debounce);
     MutationObserverOptions._default = {
       ...MutationObserverOptions._default,
       ...value,
@@ -173,18 +125,20 @@ export class MutationObserverOptions implements MutationObserverInit {
     };
   }
 
-  constructor(init: MutationObserverOptionsInit = {}) {
-    // Priority: Instance defaults < Global defaults < Constructor arguments
+  constructor(init?: MutationObserverOptionsInit) {
     this.apply(MutationObserverOptions._default);
     this.apply(init);
 
-    const debounce = mergeDebounceInput(MutationObserverOptions._default.debounce, init.debounce);
-    this.debounce = debounce === false
-      ? null
-      : new MutationObserverDebounceOptions(debounce);
+    const debounce = shallowMergeDebounceOptions(MutationObserverOptions._default?.debounce, init?.debounce);
+    this.debounce = debounce == null
+      ? false
+      : debounce;
   }
 
-  private apply(init: MutationObserverOptionsInit): void {
+  private apply(init?: MutationObserverOptionsInit): void {
+    if (!init)
+      return;
+
     const { debounce: _, exclusions, ...options } = init;
     Object.assign(this, options);
 
@@ -205,4 +159,15 @@ export class MutationObserverOptions implements MutationObserverInit {
       subtree: this.subtree,
     };
   }
+}
+
+function shallowMergeDebounceOptions(
+  current?: MutationObserverDebounceOptionsInput | undefined,
+  next?: MutationObserverDebounceOptionsInput) {
+  // If the next value is explicitly false, we disable debounce.
+  if (next === false) {
+    return false;
+  }
+  // converts false to undefined for proper merging
+  return shallowMerge(current || undefined, next || undefined);
 }

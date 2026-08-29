@@ -126,3 +126,37 @@ export function definePropertyIfAbsent<
 
   return true;
 }
+
+/**
+ * Shallow merges two optional objects.
+ *
+ * - If `next` is null/undefined, returns `current` as-is.
+ * - If `current` is null/undefined, returns `next` as-is.
+ * - Otherwise, returns a new object with `next`'s properties
+ *   overwriting `current`'s at the top level only (nested objects
+ *   are replaced wholesale, not merged recursively).
+ *
+ * Note: an explicit `undefined` value on `next` WILL overwrite the
+ * corresponding field in `current` (unlike lodash's `_.merge`).
+ *
+ * @param current - The base object.
+ * @param next - The object whose properties take precedence.
+ * @returns A new merged object, or `undefined` if both inputs are null/undefined.
+ */
+export function shallowMerge<T extends object>(
+  current?: T,
+  next?: T,
+): T | undefined {
+  if (next == null) {
+    return current;
+  }
+
+  if (current == null) {
+    return next;
+  }
+
+  return {
+    ...current,
+    ...next,
+  };
+}

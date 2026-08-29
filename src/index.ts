@@ -17,7 +17,7 @@ import '@/extensions/url';
 import "@/helpers";
 
 export * from "@/types/lib";
-export * from "@/types/mutation-observer";
+export * from "@/types/mutation-observer-options";
 
 export * from "@/utils/http-error";
 export * from "@/utils/lazy";
@@ -26,6 +26,3 @@ export * from "@/utils/stack";
 export * from "@/utils/string-builder";
 export * from "@/utils/time-span";
 export * from "@/utils/timer";
-
-
-
