@@ -1,6 +1,19 @@
 import type { Nullable } from '@/types/lib';
 import { DebounceOptions, type DebounceCallback } from '@/types/debounce-options';
 
+type Timer = ReturnType<typeof setTimeout>;
+
+type DebounceState<TArgs extends any[]> =
+  | { phase: 'idle' }
+  | WaitingState<TArgs>;
+
+interface WaitingState<TArgs extends any[]> {
+  phase: 'waiting';
+  debounceTimer: Nullable<Timer>;
+  maxWaitTimer: Nullable<Timer>;
+  pendingArgs?: TArgs;
+}
+
 /**
  * Creates a debounced function that controls whether the callback runs at the leading edge,
  * trailing edge, or both edges of a debounce window.
@@ -9,86 +22,133 @@ import { DebounceOptions, type DebounceCallback } from '@/types/debounce-options
  * only on the leading edge; a trailing call runs only when a later call occurs in the window.
  * When `maxWaitMs` is set, a pending call is invoked with the latest arguments once that
  * maximum wait is reached, even if frequent calls keep resetting the debounce delay or
- * `trailing` is false. With `trailing` disabled, stopping activity does not invoke the final
- * pending call.
+ * both edges are disabled. Values shorter than `debounceMs` are treated as `debounceMs`.
+ * With `trailing` disabled, stopping activity before the maximum wait is reached does not
+ * invoke the final pending call.
  * @param callback The function to debounce.
  * @param options An object containing debounce options.
  * @returns A new debounced function.
  */
 export function debounce<TArgs extends any[]>(callback: DebounceCallback<TArgs>, options: Partial<DebounceOptions<TArgs>>): DebounceCallback<TArgs> {
   const opts = new DebounceOptions(options);
-  let timer: Nullable<ReturnType<typeof setTimeout>> = null;
-  let maxWaitTimer: Nullable<ReturnType<typeof setTimeout>> = null;
-  let pendingArgs: TArgs | undefined;
-  const cb = (...args: TArgs) => {
+  const maxWaitMs = opts.maxWaitMs == null
+    ? undefined
+    : Math.max(opts.maxWaitMs, opts.debounceMs);
+  let state: DebounceState<TArgs> = { phase: 'idle' };
+
+  const invoke = (args: TArgs) => {
     opts.beforeCallback?.(...args);
     callback(...args);
     opts.afterCallback?.(...args);
   };
 
-  const invokePending = () => {
-    if (pendingArgs === undefined) {
+  const invokePending = (waiting: WaitingState<TArgs>) => {
+    const args = waiting.pendingArgs;
+    waiting.pendingArgs = undefined;
+
+    if (args !== undefined) {
+      invoke(args);
+    }
+  };
+
+  const cancelMaxWait = (waiting: WaitingState<TArgs>) => {
+    if (waiting.maxWaitTimer != null) {
+      clearTimeout(waiting.maxWaitTimer);
+      waiting.maxWaitTimer = null;
+    }
+  };
+
+  const finishWaiting = (waiting: WaitingState<TArgs>) => {
+    if (state !== waiting) {
       return;
     }
 
-    const args = pendingArgs;
-    pendingArgs = undefined;
-    cb(...args);
-  };
+    cancelMaxWait(waiting);
+    state = { phase: 'idle' };
 
-  const clearMaxWaitTimer = () => {
-    if (maxWaitTimer != null) {
-      clearTimeout(maxWaitTimer);
-      maxWaitTimer = null;
+    if (opts.trailing) {
+      invokePending(waiting);
+    } else {
+      waiting.pendingArgs = undefined;
     }
   };
 
-  const scheduleMaxWait = () => {
-    if (opts.maxWaitMs == null || maxWaitTimer != null || pendingArgs === undefined) {
+  const scheduleMaxWait = (waiting: WaitingState<TArgs>) => {
+    if (maxWaitMs == null || waiting.maxWaitTimer != null) {
       return;
     }
 
-    maxWaitTimer = setTimeout(() => {
-      maxWaitTimer = null;
-      invokePending();
-    }, opts.maxWaitMs);
+    waiting.maxWaitTimer = setTimeout(() => {
+      if (state !== waiting) {
+        return;
+      }
+
+      waiting.maxWaitTimer = null;
+      // A maximum-wait invocation consumes pending work without ending the activity window.
+      invokePending(waiting);
+    }, maxWaitMs);
   };
 
-  return function (...args: TArgs) {
+  const queuePending = (waiting: WaitingState<TArgs>, args: TArgs) => {
+    waiting.pendingArgs = args;
+    scheduleMaxWait(waiting);
+  };
+
+  const restartDebounceTimer = (waiting: WaitingState<TArgs>) => {
+    if (waiting.debounceTimer != null) {
+      clearTimeout(waiting.debounceTimer);
+    }
+
+    waiting.debounceTimer = setTimeout(
+      () => finishWaiting(waiting),
+      opts.debounceMs,
+    );
+  };
+
+  const startWaiting = (args: TArgs) => {
+    const waiting: WaitingState<TArgs> = {
+      phase: 'waiting',
+      debounceTimer: null,
+      maxWaitTimer: null,
+    };
+    state = waiting;
+
+    if (!opts.leading && (opts.trailing || maxWaitMs != null)) {
+      queuePending(waiting, args);
+    }
+
+    // Fully establish the waiting state before invoking user code so synchronous reentry
+    // observes an active window and exceptions cannot leave a timerless waiting state.
+    restartDebounceTimer(waiting);
+
+    if (opts.leading) {
+      invoke(args);
+    }
+  };
+
+  const continueWaiting = (waiting: WaitingState<TArgs>, args: TArgs) => {
+    if (opts.trailing || maxWaitMs != null) {
+      queuePending(waiting, args);
+    }
+
+    restartDebounceTimer(waiting);
+  };
+
+  return (...args: TArgs) => {
     if (opts.shouldSkip?.(...args) === true) {
       opts.onSkipped?.(...args);
       return;
     }
 
-    if (!opts.leading && !opts.trailing) {
+    if (!opts.leading && !opts.trailing && maxWaitMs == null) {
       return;
     }
 
-    const isFirstCallInWindow = timer == null;
-    if (timer != null) {
-      clearTimeout(timer);
+    if (state.phase === 'idle') {
+      startWaiting(args);
+    } else {
+      continueWaiting(state, args);
     }
-
-    if (isFirstCallInWindow && opts.leading) {
-      cb(...args);
-    }
-
-    if (!isFirstCallInWindow || !opts.leading) {
-      if (opts.trailing || opts.maxWaitMs != null) {
-        pendingArgs = args;
-        scheduleMaxWait();
-      }
-    }
-
-    timer = setTimeout(() => {
-      timer = null;
-      clearMaxWaitTimer();
-      if (opts.trailing) {
-        invokePending();
-      } else {
-        pendingArgs = undefined;
-      }
-    }, opts.debounceMs);
   };
 }
 

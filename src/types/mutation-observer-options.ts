@@ -48,7 +48,8 @@ export class MutationObserverDebounceOptions {
    * Maximum time a pending callback may be delayed during continuous mutations;
    * default is 1000ms. Set it to undefined to disable the maximum wait.
    *
-   * This limit applies independently of `trailing`.
+   * This limit applies independently of `leading` and `trailing`. Values shorter than
+   * `debounceMs` are treated as `debounceMs` when the callback is created.
    */
   maxWaitMs?: number = 1000;
   /** If true, invokes the first callback in a debounce window immediately; default is true. */

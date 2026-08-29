@@ -1,5 +1,4 @@
-// import { debounce } from '@/helpers/utils';
-import { debounceWithStateMachine as debounce } from '@/helpers/debounce-state-machine';
+import { debounce } from '@/helpers/utils';
 
 describe('debounce (enhanced)', () => {
 
@@ -259,19 +258,21 @@ describe('debounce (enhanced)', () => {
     const debounced = debounce(fn, {
       leading: false,
       debounceMs: 500,
-      maxWaitMs: 300,
+      maxWaitMs: 600,
       shouldSkip: (value: number) => value < 0,
     });
 
     debounced(1);
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(300);
     debounced(-1);
+    vi.advanceTimersByTime(150);
+    debounced(2);
     vi.advanceTimersByTime(149);
 
     expect(fn).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(1);
-    expect(fn).toHaveBeenCalledExactlyOnceWith(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(2);
   });
 
   test('should pass arguments to before/after callbacks', () => {
@@ -345,6 +346,92 @@ describe('debounce (enhanced)', () => {
     vi.advanceTimersByTime(1000);
 
     expect(fn).not.toHaveBeenCalled();
+  });
+
+  test('should let maxWaitMs invoke independently when both edges are disabled', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      debounceMs: 100,
+      maxWaitMs: 250,
+      leading: false,
+      trailing: false,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(80);
+    debounced(2);
+    vi.advanceTimersByTime(80);
+    debounced(3);
+    vi.advanceTimersByTime(80);
+    debounced(4);
+
+    vi.advanceTimersByTime(9);
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(4);
+  });
+
+  test('should treat maxWaitMs shorter than debounceMs as debounceMs', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      debounceMs: 100,
+      maxWaitMs: 50,
+      leading: false,
+      trailing: false,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(50);
+    debounced(2);
+
+    vi.advanceTimersByTime(49);
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(fn).toHaveBeenCalledExactlyOnceWith(2);
+  });
+
+  test('should make the waiting state visible to a reentrant leading callback', () => {
+    const fn = vi.fn<(value: number) => void>();
+    let debounced: (value: number) => void;
+    fn.mockImplementation(value => {
+      if (value === 1) {
+        debounced(2);
+      }
+    });
+    debounced = debounce(fn, {
+      debounceMs: 100,
+      leading: true,
+      trailing: true,
+    });
+
+    debounced(1);
+
+    expect(fn).toHaveBeenCalledExactlyOnceWith(1);
+
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(2);
+  });
+
+  test('should recover the waiting state after a leading callback throws', () => {
+    const error = new Error('callback failed');
+    const fn = vi.fn<(value: number) => void>()
+      .mockImplementationOnce(() => { throw error; });
+    const debounced = debounce(fn, {
+      debounceMs: 100,
+      leading: true,
+      trailing: false,
+    });
+
+    expect(() => debounced(1)).toThrow(error);
+
+    vi.advanceTimersByTime(100);
+    debounced(2);
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(2);
   });
 
 });

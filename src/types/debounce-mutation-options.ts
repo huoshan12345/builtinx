@@ -8,7 +8,8 @@ export class DebounceMutationOptions {
   debounceMs: number = 1000;
   /**
    * Maximum time a pending callback may be delayed during continuous mutations.
-   * This limit applies independently of `trailing`. Omit it to disable the maximum wait.
+   * This limit applies independently of `leading` and `trailing`. Values shorter than
+   * `debounceMs` are treated as `debounceMs`. Omit it to disable the maximum wait.
    */
   maxWaitMs?: number;
   /** If true, invokes the first callback in a debounce window immediately; default is true. */

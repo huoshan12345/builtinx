@@ -9,7 +9,8 @@ export class DebounceOptions<TArgs extends any[]> {
   /**
    * The maximum time a pending call may be delayed during continuous activity.
    *
-   * This limit applies independently of `trailing`. Omit it to disable the maximum wait.
+   * This limit applies independently of `leading` and `trailing`. Values shorter than
+   * `debounceMs` are treated as `debounceMs`. Omit it to disable the maximum wait.
    */
   maxWaitMs?: number;
   /** If true, invokes the first call in a debounce window immediately; default is true. */
