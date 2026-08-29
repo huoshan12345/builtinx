@@ -4,34 +4,66 @@ import {
   type MutationExclusion,
 } from '@/types/mutation-observer-options';
 
+describe('MutationObserverOptions defaults', () => {
+  test('should initialize with the declared defaults', () => {
+    const options = new MutationObserverOptions();
+
+    expect(options.attributeFilter).toBeUndefined();
+    expect(options.attributeOldValue).toBe(false);
+    expect(options.attributes).toBe(false);
+    expect(options.characterData).toBe(false);
+    expect(options.characterDataOldValue).toBe(false);
+    expect(options.childList).toBe(true);
+    expect(options.subtree).toBe(true);
+    expect(options.callOnStart).toBe(true);
+    expect(options.beforeCallback).toBeUndefined();
+    expect(options.afterCallback).toBeUndefined();
+    expect(options.onSkipped).toBeUndefined();
+    expect(options.exclusions).toEqual([]);
+
+    expect(options.debounce).toBeInstanceOf(MutationObserverDebounceOptions);
+    expect(options.debounce?.debounceMs).toBe(1000);
+    expect(options.debounce?.maxWaitMs).toBe(1000);
+    expect(options.debounce?.leading).toBe(true);
+    expect(options.debounce?.trailing).toBe(true);
+  });
+
+  test('should initialize debounce options with their declared defaults', () => {
+    const options = new MutationObserverDebounceOptions();
+
+    expect(options.debounceMs).toBe(1000);
+    expect(options.maxWaitMs).toBe(1000);
+    expect(options.leading).toBe(true);
+    expect(options.trailing).toBe(true);
+  });
+});
+
 describe('MutationObserverOptions', () => {
 
   beforeEach(() => {
-    MutationObserverOptions.default = { debounce: false };
+    MutationObserverOptions.default = {
+      attributeFilter: undefined,
+      attributeOldValue: false,
+      attributes: false,
+      characterData: false,
+      characterDataOldValue: false,
+      childList: true,
+      subtree: true,
+      callOnStart: true,
+      beforeCallback: undefined,
+      afterCallback: undefined,
+      onSkipped: undefined,
+      exclusions: [],
+      debounce: false,
+    };
     MutationObserverOptions.default = {
       debounce: {
         debounceMs: 1000,
-        maxWaitMs: undefined,
+        maxWaitMs: 1000,
         leading: true,
         trailing: true,
       },
     };
-  });
-
-  test('should initialize with default values', () => {
-    const options = new MutationObserverOptions();
-
-    expect(options.childList).toBe(true);
-    expect(options.subtree).toBe(true);
-
-    expect(options.debounce).toBeInstanceOf(MutationObserverDebounceOptions);
-    expect(options.debounce?.debounceMs).toBe(1000);
-    expect(options.debounce?.maxWaitMs).toBeUndefined();
-    expect(options.debounce?.leading).toBe(true);
-    expect(options.debounce?.trailing).toBe(true);
-    expect(options.callOnStart).toBe(true);
-
-    expect(options.exclusions).toEqual([]);
   });
 
   test('should accept exclusions as array', () => {
@@ -82,6 +114,90 @@ describe('MutationObserverOptions', () => {
     options.exclusions = [fn2];
 
     expect(options.exclusions).toEqual([fn2]);
+  });
+
+  test('should clear exclusions when assigned an empty array', () => {
+    const options = new MutationObserverOptions({
+      exclusions: [() => true],
+    });
+
+    options.exclusions = [];
+
+    expect(options.exclusions).toEqual([]);
+  });
+
+  test('should apply a transformer to an empty exclusion list', () => {
+    const fn: MutationExclusion = () => true;
+    const options = new MutationObserverOptions({
+      exclusions: current => [...current, fn],
+    });
+
+    expect(options.exclusions).toEqual([fn]);
+  });
+
+  test('should allow a transformer to remove exclusions', () => {
+    const keep: MutationExclusion = () => false;
+    const remove: MutationExclusion = () => true;
+    const options = new MutationObserverOptions({
+      exclusions: [keep, remove],
+    });
+
+    options.exclusions = current => current.filter(exclusion => exclusion !== remove);
+
+    expect(options.exclusions).toEqual([keep]);
+  });
+
+  test('should clear exclusions when a transformer returns an empty array', () => {
+    const options = new MutationObserverOptions({
+      exclusions: [() => true],
+    });
+
+    options.exclusions = () => [];
+
+    expect(options.exclusions).toEqual([]);
+  });
+
+  test('should preserve exclusions when a transformer throws', () => {
+    const fn: MutationExclusion = () => true;
+    const options = new MutationObserverOptions({
+      exclusions: [fn],
+    });
+
+    expect(() => {
+      options.exclusions = () => {
+        throw new Error('transform failed');
+      };
+    }).toThrow('transform failed');
+
+    expect(options.exclusions).toEqual([fn]);
+  });
+
+  test('should apply an instance transformer to global default exclusions', () => {
+    const defaultExclusion: MutationExclusion = () => true;
+    const instanceExclusion: MutationExclusion = () => false;
+    MutationObserverOptions.default = {
+      exclusions: [defaultExclusion],
+    };
+
+    const options = new MutationObserverOptions({
+      exclusions: current => [...current, instanceExclusion],
+    });
+
+    expect(options.exclusions).toEqual([defaultExclusion, instanceExclusion]);
+  });
+
+  test('should let an instance array replace global default exclusions', () => {
+    const defaultExclusion: MutationExclusion = () => true;
+    const instanceExclusion: MutationExclusion = () => false;
+    MutationObserverOptions.default = {
+      exclusions: [defaultExclusion],
+    };
+
+    const options = new MutationObserverOptions({
+      exclusions: [instanceExclusion],
+    });
+
+    expect(options.exclusions).toEqual([instanceExclusion]);
   });
 
   test('should merge static default with constructor options', () => {
@@ -144,6 +260,18 @@ describe('MutationObserverOptions', () => {
 
     expect(options.debounce).toBeInstanceOf(MutationObserverDebounceOptions);
     expect(options.debounce?.debounceMs).toBe(250);
+  });
+
+  test('should preserve a disabled global debounce when unrelated defaults are updated', () => {
+    MutationObserverOptions.default = {
+      debounce: false,
+    };
+    MutationObserverOptions.default = {
+      callOnStart: false,
+    };
+
+    expect(MutationObserverOptions.default.debounce).toBe(false);
+    expect(new MutationObserverOptions().debounce).toBeUndefined();
   });
 
   test('toNativeInit should only include MutationObserverInit fields', () => {

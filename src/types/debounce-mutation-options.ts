@@ -1,17 +1,22 @@
 import type { Predicate } from './lib';
 
 /**
- * Options for the enhanced MutationObserver, extending the standard MutationObserverInit.
- * Includes additional properties for debouncing and mutation exclusion logic.
+ * Options for creating a debounced mutation callback with exclusion filtering.
  */
 export class DebounceMutationOptions {
-  /** Debounce interval in milliseconds. */
+  /** Debounce interval in milliseconds; default is 1000ms. */
   debounceMs: number = 1000;
-  /** An optional number specifying the maximum time a pending call may be delayed. */
+  /**
+   * Maximum time a pending callback may be delayed during continuous mutations.
+   * This limit applies independently of `trailing`. Omit it to disable the maximum wait.
+   */
   maxWaitMs?: number;
-  /** If true, triggers the callback on the leading edge of the debounce. */
+  /** If true, invokes the first callback in a debounce window immediately; default is true. */
   leading: boolean = true;
-  /** If true, triggers the callback on the trailing edge of the debounce. */
+  /**
+   * If true, invokes the final pending callback after mutations stop; default is true.
+   * Setting this to false does not disable invocations caused by `maxWaitMs`.
+   */
   trailing: boolean = true;
   /** List of predicates to determine which mutations should be excluded (ignored). */
   exclusions: Predicate<MutationRecord>[] = [];
@@ -23,7 +28,8 @@ export class DebounceMutationOptions {
   /** Optional function that will be called when the callback is skipped. */
   onSkipped?: MutationCallback;
 
-  constructor(options: Partial<DebounceMutationOptions>) {
-    Object.assign(this, options);
+  /** Creates resolved options from partial overrides. */
+  constructor(init: Partial<DebounceMutationOptions>) {
+    Object.assign(this, init);
   }
 }

@@ -68,7 +68,7 @@ function createInitialMutationRecord(target: Node): MutationRecord {
   };
 }
 
-function observe(this: Node, callback: NodeMutationCallback, options?: Partial<MutationObserverOptions>) {
+function observe(this: Node, callback: NodeMutationCallback, options?: MutationObserverOptionsInit) {
   const opts = new MutationObserverOptions(options);
   const node = this;
 

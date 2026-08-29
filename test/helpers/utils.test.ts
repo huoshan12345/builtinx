@@ -226,6 +226,33 @@ describe('debounce (enhanced)', () => {
     expect(fn).toHaveBeenLastCalledWith(4);
   });
 
+  test('should not invoke the final pending call after activity stops when trailing is disabled', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, {
+      leading: true,
+      trailing: false,
+      debounceMs: 100,
+      maxWaitMs: 250,
+    });
+
+    debounced(1);
+    vi.advanceTimersByTime(80);
+    debounced(2);
+    vi.advanceTimersByTime(80);
+    debounced(3);
+    vi.advanceTimersByTime(80);
+    debounced(4);
+    vi.advanceTimersByTime(90);
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenLastCalledWith(4);
+
+    debounced(5);
+    vi.advanceTimersByTime(100);
+
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
   test('should not let skipped calls reset maxWaitMs', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, {

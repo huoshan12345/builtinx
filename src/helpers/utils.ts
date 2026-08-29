@@ -8,7 +8,9 @@ import { DebounceOptions, type DebounceCallback } from '@/types/utils';
  * Both `leading` and `trailing` default to true. When both are enabled, a single call runs
  * only on the leading edge; a trailing call runs only when a later call occurs in the window.
  * When `maxWaitMs` is set, a pending call is invoked with the latest arguments once that
- * maximum wait is reached, even if frequent calls keep resetting the debounce delay.
+ * maximum wait is reached, even if frequent calls keep resetting the debounce delay or
+ * `trailing` is false. With `trailing` disabled, stopping activity does not invoke the final
+ * pending call.
  * @param callback The function to debounce.
  * @param options An object containing debounce options.
  * @returns A new debounced function.
