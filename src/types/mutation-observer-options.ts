@@ -58,7 +58,9 @@ export interface MutationObserverOptionsOverrides {
   debounce: MutationObserverDebounceOptionsInput;
 }
 
-export type MutationObserverOptionsInit = Partial<Omit<MutationObserverOptions, keyof MutationObserverOptionsOverrides> & Partial<MutationObserverOptionsOverrides>>;
+export type MutationObserverOptionsInit =
+  Partial<Omit<MutationObserverOptions, keyof MutationObserverOptionsOverrides>
+    & Partial<MutationObserverOptionsOverrides>>;
 
 /**
  * Configuration for an enhanced MutationObserver.
