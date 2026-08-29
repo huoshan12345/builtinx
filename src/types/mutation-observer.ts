@@ -142,7 +142,7 @@ export class MutationObserverOptions implements MutationObserverInit {
   private _exclusions: MutationExclusion[] = [];
 
   /** Get the current list of mutation exclusion predicates. */
-  public get exclusions(): MutationExclusionsInput {
+  public get exclusions(): MutationExclusion[] {
     return this._exclusions;
   }
 
@@ -156,11 +156,6 @@ export class MutationObserverOptions implements MutationObserverInit {
     } else {
       this._exclusions = value;
     }
-  }
-
-  /** Returns the resolved list of exclusion predicates. */
-  public get resolvedExclusions(): MutationExclusion[] {
-    return this._exclusions;
   }
 
   private static _default: MutationObserverOptionsInit = {};

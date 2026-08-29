@@ -20,7 +20,7 @@ declare global {
     isNewLineTextNode(): boolean;
 
     /**
-     * Observe mutations on this node and its subtree.     
+     * Observe mutations on this node and its subtree.
      */
     observe(callback: NodeMutationCallback, options?: MutationObserverOptionsInit): MutationObserver;
   }
@@ -84,7 +84,7 @@ function observe(this: Node, callback: NodeMutationCallback, options?: MutationO
 
   const observer = new MutationObserver((records, obs) => {
     const filtered = records.filter(record =>
-      !opts.resolvedExclusions.some(exclusion => exclusion(record))
+      !opts.exclusions.some(exclusion => exclusion(record))
     );
     records.replaceFrom(filtered);
 
@@ -98,9 +98,7 @@ function observe(this: Node, callback: NodeMutationCallback, options?: MutationO
 
   if (opts.callOnStart) {
     const records = [createInitialMutationRecord(node)];
-    opts.beforeCallback?.(records, observer, node);
-    callback(records, observer, node);
-    opts.afterCallback?.(records, observer, node);
+    invokeCallback(records, observer);
   }
 
   observer.observe(node, opts.toNativeInit());

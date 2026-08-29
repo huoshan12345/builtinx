@@ -31,7 +31,7 @@ describe('MutationObserverOptions', () => {
     expect(options.debounce?.trailing).toBe(true);
     expect(options.callOnStart).toBe(true);
 
-    expect(options.resolvedExclusions).toEqual([]);
+    expect(options.exclusions).toEqual([]);
   });
 
   test('should accept exclusions as array', () => {
@@ -41,7 +41,7 @@ describe('MutationObserverOptions', () => {
       exclusions: [fn]
     });
 
-    expect(options.resolvedExclusions).toEqual([fn]);
+    expect(options.exclusions).toEqual([fn]);
   });
 
   test('should accept exclusions as transformer function', () => {
@@ -54,7 +54,7 @@ describe('MutationObserverOptions', () => {
 
     options.exclusions = (prev) => [...prev, fn2];
 
-    expect(options.resolvedExclusions).toEqual([fn1, fn2]);
+    expect(options.exclusions).toEqual([fn1, fn2]);
   });
 
   test('transformer should receive current exclusions', () => {
@@ -81,7 +81,7 @@ describe('MutationObserverOptions', () => {
 
     options.exclusions = [fn2];
 
-    expect(options.resolvedExclusions).toEqual([fn2]);
+    expect(options.exclusions).toEqual([fn2]);
   });
 
   test('should merge static default with constructor options', () => {
@@ -180,7 +180,7 @@ describe('MutationObserverOptions', () => {
     options.exclusions = (prev) => [...prev, fn1];
     options.exclusions = (prev) => [...prev, fn2];
 
-    expect(options.resolvedExclusions).toEqual([fn1, fn2]);
+    expect(options.exclusions).toEqual([fn1, fn2]);
   });
 
 });
