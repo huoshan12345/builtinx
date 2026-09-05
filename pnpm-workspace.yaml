@@ -1,4 +1,2 @@
 allowBuilds:
   esbuild: true
-patchedDependencies:
-  vitest@5.0.0: patches/vitest@5.0.0.patch
