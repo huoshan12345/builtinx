@@ -39,7 +39,8 @@ DOM-specific extensions live in a separate entry so they can be loaded only in b
 import "builtinx";
 import "builtinx/dom";
 
-document.body.hide().show();
+document.body.setVisible(false);
+document.body.setVisible(true);
 document.body.observe((records, observer, node) => {
   console.log(records, node);
 });
@@ -162,12 +163,11 @@ await Promise.resolve(result).delay(100);
 
 Load these with `import "builtinx/dom"` after the core entry.
 
-### Element and HTMLElement
+### Element
 
-- `Element.hide()`, `Element.show()`.
+- `Element.setVisible(value)` hides with `display: none` when false and restores the previous inline display when true. It supports HTML and SVG elements and returns the element for chaining. Restoring display does not guarantee visibility when other styles or ancestors hide the element.
 - `Element.collapseBrs()`, `Element.trimLeadingBrs()`.
 - `Element.getDocumentRect()`.
-- `HTMLElement.isVisible()`, `HTMLElement.setVisible(value)`.
 
 ### Node and MutationObserver
 

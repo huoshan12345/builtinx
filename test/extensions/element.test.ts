@@ -1,12 +1,14 @@
+import { expectTypeOf } from 'vitest';
+
 beforeEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("Element.prototype.hide", () => {
+describe("Element.prototype.setVisible(false)", () => {
   it("sets display to none", () => {
     const div = document.createElement("div");
 
-    div.hide();
+    div.setVisible(false);
 
     expect(div.style.display).toBe("none");
   });
@@ -14,36 +16,36 @@ describe("Element.prototype.hide", () => {
   it("returns same element", () => {
     const div = document.createElement("div");
 
-    expect(div.hide()).toBe(div);
+    expect(div.setVisible(false)).toBe(div);
   });
 
   it("preserves existing display value for later restore", () => {
     const div = document.createElement("div");
     div.style.display = "flex";
 
-    div.hide();
+    div.setVisible(false);
 
     expect(div.style.display).toBe("none");
-    expect(div.dataset.builtxDisplay).toBe("flex");
+    expect(div.dataset.builtinxDisplay).toBe("flex");
   });
 
   it("does not overwrite saved display when already hidden", () => {
     const div = document.createElement("div");
     div.style.display = "grid";
 
-    div.hide();
-    div.hide();
+    div.setVisible(false);
+    div.setVisible(false);
 
-    expect(div.dataset.builtxDisplay).toBe("grid");
+    expect(div.dataset.builtinxDisplay).toBe("grid");
   });
 });
 
-describe("Element.prototype.show", () => {
+describe("Element.prototype.setVisible(true)", () => {
   it("restores empty display by default", () => {
     const div = document.createElement("div");
 
-    div.hide();
-    div.show();
+    div.setVisible(false);
+    div.setVisible(true);
 
     expect(div.style.display).toBe("");
   });
@@ -52,27 +54,49 @@ describe("Element.prototype.show", () => {
     const div = document.createElement("div");
     div.style.display = "inline-block";
 
-    div.hide();
-    div.show();
+    div.setVisible(false);
+    div.setVisible(true);
 
     expect(div.style.display).toBe("inline-block");
+  });
+
+  it("clears display none when no previous display was saved", () => {
+    const div = document.createElement("div");
+    div.style.display = "none";
+
+    div.setVisible(false).setVisible(true);
+
+    expect(div.style.display).toBe("");
+    expect(div.dataset.builtinxDisplay).toBeUndefined();
+  });
+
+  it("preserves the latest display value across repeated cycles", () => {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+
+    div.setVisible(false).setVisible(false).setVisible(true).setVisible(true);
+    expect(div.style.display).toBe("flex");
+
+    div.style.display = "grid";
+    div.setVisible(false).setVisible(true);
+    expect(div.style.display).toBe("grid");
   });
 
   it("removes saved display after restore", () => {
     const div = document.createElement("div");
     div.style.display = "flex";
 
-    div.hide();
-    div.show();
+    div.setVisible(false);
+    div.setVisible(true);
 
-    expect(div.dataset.builtxDisplay).toBeUndefined();
+    expect(div.dataset.builtinxDisplay).toBeUndefined();
   });
 
   it("does nothing when element is not hidden", () => {
     const div = document.createElement("div");
     div.style.display = "block";
 
-    div.show();
+    div.setVisible(true);
 
     expect(div.style.display).toBe("block");
   });
@@ -80,15 +104,60 @@ describe("Element.prototype.show", () => {
   it("returns same element", () => {
     const div = document.createElement("div");
 
-    expect(div.show()).toBe(div);
+    expect(div.setVisible(true)).toBe(div);
   });
 
   it("supports chaining", () => {
     const div = document.createElement("div");
 
-    div.hide().show().hide();
+    div.setVisible(false).setVisible(true).setVisible(false);
 
     expect(div.style.display).toBe("none");
+  });
+
+  it("preserves the concrete element type", () => {
+    const div = document.createElement("div");
+
+    expectTypeOf(div.setVisible(false).setVisible(true)).toEqualTypeOf<HTMLDivElement>();
+  });
+
+  it("restores SVG display and supports chaining", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.style.display = "inline";
+
+    expect(svg.setVisible(false).setVisible(true)).toBe(svg);
+    expect(svg.style.display).toBe("inline");
+    expectTypeOf(svg.setVisible(true)).toEqualTypeOf<SVGSVGElement>();
+  });
+
+  it("restores dialog display while preserving the native show type", () => {
+    const dialog = document.createElement("dialog");
+    document.body.append(dialog);
+    dialog.style.display = "block";
+
+    expectTypeOf(dialog).toExtend<Element>();
+    expectTypeOf(dialog.show).returns.toBeVoid();
+    expectTypeOf(dialog.setVisible(true)).toEqualTypeOf<HTMLDialogElement>();
+    expect(dialog.setVisible(false).setVisible(true)).toBe(dialog);
+    expect(dialog.style.display).toBe("block");
+    expect(dialog.open).toBe(false);
+  });
+
+  it("restores dialog display without calling native show", () => {
+    const dialog = document.createElement("dialog");
+    dialog.style.display = "flex";
+    // jsdom does not implement HTMLDialogElement.show yet.
+    const show = vi.fn((): void => {
+      dialog.open = true;
+    });
+    dialog.show = show;
+
+    expect(dialog.setVisible(false)).toBe(dialog);
+    expect(dialog.style.display).toBe("none");
+    expect(dialog.setVisible(true)).toBe(dialog);
+    expect(dialog.style.display).toBe("flex");
+    expect(dialog.open).toBe(false);
+    expect(show).not.toHaveBeenCalled();
   });
 });
 

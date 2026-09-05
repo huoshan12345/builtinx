@@ -5,14 +5,14 @@ type StyledElement = Element & ElementCSSInlineStyle;
 declare global {
   interface Element {
     /**
-     * Hides the element using display: none.
+     * Sets the element's visibility by changing its inline display style.
+     * Hiding preserves the previous display value; showing restores it or clears
+     * inline display if no value was saved. Repeated hiding preserves the saved value.
+     * Showing does not guarantee visibility when other styles or ancestors hide the element.
+     * @param value Whether to restore display (true) or set display to none (false).
+     * @returns The element itself for chaining.
      */
-    hide<T extends StyledElement>(this: T): T;
-
-    /**
-     * Restores element display.
-     */
-    show<T extends StyledElement>(this: T): T;
+    setVisible<T extends StyledElement>(this: T, value: boolean): T;
 
     /**
      * Collapses consecutive <br> elements and newline text nodes into a single <br>.
@@ -33,19 +33,15 @@ declare global {
 
 const previousDisplayKey = "data-builtinx-display";
 
-function hide<T extends StyledElement>(this: T): T {
-  if (this.style.display !== "none") {
+function setVisible<T extends StyledElement>(this: T, value: boolean): T {
+  if (value) {
+    if (this.style.display === "none") {
+      this.style.display = this.getAttribute(previousDisplayKey) ?? "";
+      this.removeAttribute(previousDisplayKey);
+    }
+  } else if (this.style.display !== "none") {
     this.setAttribute(previousDisplayKey, this.style.display);
     this.style.display = "none";
-  }
-
-  return this;
-}
-
-function show<T extends StyledElement>(this: T): T {
-  if (this.style.display === "none") {
-    this.style.display = this.getAttribute(previousDisplayKey) ?? "";
-    this.removeAttribute(previousDisplayKey);
   }
 
   return this;
@@ -89,8 +85,7 @@ function getDocumentRect(this: Element): DOMRectReadOnly {
   );
 };
 
-definePropertyIfAbsent(Element.prototype, "hide", hide);
-definePropertyIfAbsent(Element.prototype, "show", show);
+definePropertyIfAbsent(Element.prototype, "setVisible", setVisible);
 definePropertyIfAbsent(Element.prototype, "collapseBrs", collapseBrs);
 definePropertyIfAbsent(Element.prototype, "trimLeadingBrs", trimLeadingBrs);
 definePropertyIfAbsent(Element.prototype, "getDocumentRect", getDocumentRect);
