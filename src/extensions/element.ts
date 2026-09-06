@@ -1,4 +1,5 @@
 import { definePropertyIfAbsent } from '@/helpers/utils';
+import { isNewLineTextNode } from './node';
 
 type StyledElement = Element & ElementCSSInlineStyle;
 
@@ -33,27 +34,29 @@ declare global {
 
 const previousDisplayKey = "data-builtinx-display";
 
-function setVisible<T extends StyledElement>(this: T, value: boolean): T {
+/** Hides or restores an element's inline display, returning the same element. */
+export function setVisible<T extends StyledElement>(element: T, value: boolean): T {
   if (value) {
-    if (this.style.display === "none") {
-      this.style.display = this.getAttribute(previousDisplayKey) ?? "";
-      this.removeAttribute(previousDisplayKey);
+    if (element.style.display === "none") {
+      element.style.display = element.getAttribute(previousDisplayKey) ?? "";
+      element.removeAttribute(previousDisplayKey);
     }
-  } else if (this.style.display !== "none") {
-    this.setAttribute(previousDisplayKey, this.style.display);
-    this.style.display = "none";
+  } else if (element.style.display !== "none") {
+    element.setAttribute(previousDisplayKey, element.style.display);
+    element.style.display = "none";
   }
 
-  return this;
+  return element;
 }
 
-function collapseBrs<T extends Element>(this: T): T {
-  for (const item of this.querySelectorAll('br')) {
+/** Collapses consecutive breaks and newline text nodes, returning the same element. */
+export function collapseBrs<T extends Element>(element: T): T {
+  for (const item of element.querySelectorAll('br')) {
     while (true) {
       const next = item.nextSibling;
       // Sometimes there are many newline text nodes or consecutive <br> elements after a <br>, 
       // which are meaningless and can be removed directly.
-      if (next && (next.nodeName === 'BR' || next.isNewLineTextNode())) {
+      if (next && (next.nodeName === 'BR' || isNewLineTextNode(next))) {
         next.remove();
       } else {
         break;
@@ -61,31 +64,48 @@ function collapseBrs<T extends Element>(this: T): T {
     }
   }
 
-  return this;
+  return element;
 };
 
-function trimLeadingBrs<T extends Element>(this: T): T {
-  while (this.childNodes.length > 0) {
-    const first = this.childNodes[0];
-    if (first.nodeName !== 'BR' && !first.isNewLineTextNode()) {
+/** Removes leading breaks and newline text nodes, returning the same element. */
+export function trimLeadingBrs<T extends Element>(element: T): T {
+  while (element.childNodes.length > 0) {
+    const first = element.childNodes[0];
+    if (first.nodeName !== 'BR' && !isNewLineTextNode(first)) {
       break;
     }
     first.remove();
   }
-  return this;
+  return element;
 }
 
-function getDocumentRect(this: Element): DOMRectReadOnly {
-  const rect = this.getBoundingClientRect();
+/** Gets bounds relative to the element's own document, including its window's scroll offsets. */
+export function getDocumentRect(element: Element): DOMRectReadOnly {
+  const rect = element.getBoundingClientRect();
+  const view = element.ownerDocument.defaultView;
   return new DOMRectReadOnly(
-    rect.left + window.scrollX,
-    rect.top + window.scrollY,
+    rect.left + (view?.scrollX ?? 0),
+    rect.top + (view?.scrollY ?? 0),
     rect.width,
     rect.height
   );
 };
 
-definePropertyIfAbsent(Element.prototype, "setVisible", setVisible);
-definePropertyIfAbsent(Element.prototype, "collapseBrs", collapseBrs);
-definePropertyIfAbsent(Element.prototype, "trimLeadingBrs", trimLeadingBrs);
-definePropertyIfAbsent(Element.prototype, "getDocumentRect", getDocumentRect);
+definePropertyIfAbsent(Element.prototype, "setVisible", function <T extends StyledElement>(
+  this: T,
+  value: boolean,
+): T {
+  return setVisible(this, value);
+});
+
+definePropertyIfAbsent(Element.prototype, "collapseBrs", function <T extends Element>(this: T): T {
+  return collapseBrs(this);
+});
+
+definePropertyIfAbsent(Element.prototype, "trimLeadingBrs", function <T extends Element>(this: T): T {
+  return trimLeadingBrs(this);
+});
+
+definePropertyIfAbsent(Element.prototype, "getDocumentRect", function (this: Element): DOMRectReadOnly {
+  return getDocumentRect(this);
+});

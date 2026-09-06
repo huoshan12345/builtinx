@@ -14,7 +14,7 @@ import '@/extensions/url-ex';
 import '@/extensions/url-search-params';
 import '@/extensions/url';
 
-import "@/helpers";
+export { BuiltinX } from '@/helpers';
 
 export * from "@/types/lib";
 export * from "@/types/mutation-observer-options";

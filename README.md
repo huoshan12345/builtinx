@@ -46,6 +46,27 @@ document.body.observe((records, observer, node) => {
 });
 ```
 
+The DOM entry also adds static methods to the global `BuiltinX.Element`,
+`BuiltinX.Node`, and `BuiltinX.Storage` groups. Pass the target object as the first
+argument. This supports objects from accessible iframes whose prototypes have not
+been extended by the parent window:
+
+```ts
+import "builtinx";
+import "builtinx/dom";
+
+const frame = document.querySelector<HTMLIFrameElement>("iframe")!;
+const element = frame.contentDocument!.body;
+
+BuiltinX.Element.trimLeadingBrs(element);
+BuiltinX.Element.collapseBrs(element);
+const text = BuiltinX.Node.ownText(element);
+const value = BuiltinX.Storage.getCache<string>(frame.contentWindow!.localStorage, "key");
+```
+
+Existing helpers such as `BuiltinX.Element.tagNames` remain available.
+`getDocumentRect` returns coordinates relative to the target element's own document.
+
 The helper namespace is also installed globally:
 
 ```ts
@@ -60,7 +81,7 @@ const data = await BuiltinX.Http.request("/api/items");
 | Entry | Purpose |
 | --- | --- |
 | `builtinx` | Core extensions, helper namespace, utility classes, and shared types. |
-| `builtinx/dom` | DOM-only prototype extensions for `Element`, `HTMLElement`, `Node`, and `Storage`. |
+| `builtinx/dom` | DOM prototype extensions and static `BuiltinX.Element`, `BuiltinX.Node`, and `BuiltinX.Storage` methods. |
 
 ## Prototype Extensions
 

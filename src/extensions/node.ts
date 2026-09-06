@@ -26,13 +26,14 @@ declare global {
   }
 }
 
-function ownText(this: Node): string {
-  if (this.nodeType === Node.TEXT_NODE) {
-    return this.textContent ?? '';
+/** Returns the combined text of direct child text nodes, or the text node's own content. */
+export function ownText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? '';
   }
 
   let text = '';
-  for (const child of this.childNodes) {
+  for (const child of node.childNodes) {
     if (child.nodeType === Node.TEXT_NODE) {
       text += child.textContent ?? '';
     }
@@ -42,13 +43,15 @@ function ownText(this: Node): string {
 
 const regNewLineText = /^\s*[\r\n]\s*$/;
 
-function isNewLineTextNode(this: Node): boolean {
-  return this.nodeType === Node.TEXT_NODE
-    && regNewLineText.test(this.nodeValue ?? '');
+/** Tests for a text node containing only whitespace and at least one newline. */
+export function isNewLineTextNode(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE
+    && regNewLineText.test(node.nodeValue ?? '');
 };
 
-function isTextNode(this: Node): boolean {
-  return this.nodeType === Node.TEXT_NODE;
+/** Tests the node type without depending on its window's prototype chain. */
+export function isTextNode(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE;
 };
 
 function createInitialMutationRecord(target: Node): MutationRecord {
@@ -68,9 +71,13 @@ function createInitialMutationRecord(target: Node): MutationRecord {
   };
 }
 
-function observe(this: Node, callback: NodeMutationCallback, options?: MutationObserverOptionsInit) {
+/** Observes a node using the same filtering, debounce, and startup options as Node.observe. */
+export function observe(
+  node: Node,
+  callback: NodeMutationCallback,
+  options?: MutationObserverOptionsInit,
+): MutationObserver {
   const opts = new MutationObserverOptions(options);
-  const node = this;
 
   const invokeCallback: MutationCallback = (records, observer) => {
     opts.beforeCallback?.(records, observer, node);
@@ -86,7 +93,10 @@ function observe(this: Node, callback: NodeMutationCallback, options?: MutationO
     const filtered = records.filter(record =>
       !opts.exclusions.some(exclusion => exclusion(record))
     );
-    records.replaceFrom(filtered);
+    records.length = 0;
+    for (const record of filtered) {
+      records.push(record);
+    }
 
     if (filtered.length === 0) {
       opts.onSkipped?.(records, obs, node);
@@ -105,7 +115,22 @@ function observe(this: Node, callback: NodeMutationCallback, options?: MutationO
   return observer;
 }
 
-definePropertyIfAbsent(Node.prototype, "ownText", ownText);
-definePropertyIfAbsent(Node.prototype, "isNewLineTextNode", isNewLineTextNode);
-definePropertyIfAbsent(Node.prototype, "isTextNode", isTextNode);
-definePropertyIfAbsent(Node.prototype, "observe", observe);
+definePropertyIfAbsent(Node.prototype, "ownText", function (this: Node): string {
+  return ownText(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isNewLineTextNode", function (this: Node): boolean {
+  return isNewLineTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isTextNode", function (this: Node): boolean {
+  return isTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "observe", function (
+  this: Node,
+  callback: NodeMutationCallback,
+  options?: MutationObserverOptionsInit,
+): MutationObserver {
+  return observe(this, callback, options);
+});
