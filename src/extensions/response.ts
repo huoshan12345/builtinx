@@ -1,4 +1,4 @@
-import { definePropertyIfAbsent } from '@/helpers/utils';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
   interface Response {

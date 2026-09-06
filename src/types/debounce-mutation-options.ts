@@ -1,4 +1,4 @@
-import type { Predicate } from './lib';
+import type { Predicate } from './lib.js';
 
 /**
  * Options for creating a debounced mutation callback with exclusion filtering.

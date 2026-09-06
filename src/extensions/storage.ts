@@ -1,6 +1,6 @@
-import type { Awaitable, Nullable } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/helpers/utils';
-import { TimeSpan } from '@/utils/time-span';
+import type { Awaitable, Nullable } from '../types/lib.js';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
+import { TimeSpan } from '../utils/time-span.js';
 
 declare global {
   interface Storage {

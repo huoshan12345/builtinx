@@ -1,4 +1,4 @@
-import { debounce } from '@/helpers/utils';
+import { debounce } from '@/helpers/utils.js';
 
 describe('debounce (enhanced)', () => {
 

@@ -1,5 +1,5 @@
-import type { Nullable } from '@/types/lib';
-import { DebounceOptions, type DebounceCallback } from '@/types/debounce-options';
+import type { Nullable } from '../types/lib.js';
+import { DebounceOptions, type DebounceCallback } from '../types/debounce-options.js';
 
 type Timer = ReturnType<typeof setTimeout>;
 

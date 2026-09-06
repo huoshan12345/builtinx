@@ -1,5 +1,5 @@
-import type { Extractor, MatchPattern, Nullable, Nullishable } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/helpers/utils';
+import type { Extractor, MatchPattern, Nullable, Nullishable } from '../types/lib.js';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
   interface Array<T> {

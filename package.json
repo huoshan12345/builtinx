@@ -1,7 +1,7 @@
 {
   "name": "builtinx",
   "author": "huoshan12345",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Extensions for JavaScript built-ins and web platform objects",
   "homepage": "https://github.com/huoshan12345/builtinx#readme",
   "repository": {

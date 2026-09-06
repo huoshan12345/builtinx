@@ -1,5 +1,5 @@
-import { debounce, definePropertyIfAbsent } from '@/helpers/utils';
-import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '@/types/mutation-observer-options';
+import { debounce, definePropertyIfAbsent } from '../helpers/utils.js';
+import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '../types/mutation-observer-options.js';
 
 declare global {
   interface Node {

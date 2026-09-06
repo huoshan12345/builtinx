@@ -1,4 +1,4 @@
-import { shallowMerge } from '@/helpers/utils';
+import { shallowMerge } from '../helpers/utils.js';
 
 /**
  * A predicate function for MutationRecord.

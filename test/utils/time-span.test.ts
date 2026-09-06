@@ -1,4 +1,4 @@
-import { TimeSpan } from '@/utils/time-span';
+import { TimeSpan } from '@/utils/time-span.js';
 
 describe('TimeSpan validation', () => {
   it('accepts only finite safe integer milliseconds in the constructor', () => {

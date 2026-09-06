@@ -1,5 +1,5 @@
-import { HttpError } from '@/utils/http-error';
-import type { Nullable, URLLike } from '@/types/lib';
+import { HttpError } from '../utils/http-error.js';
+import type { Nullable, URLLike } from '../types/lib.js';
 
 export interface Http {
   /**

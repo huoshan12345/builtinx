@@ -1,5 +1,5 @@
-import type { Nullable, QueryParam, QueryParams } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/helpers/utils';
+import type { Nullable, QueryParam, QueryParams } from '../types/lib.js';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
   interface URL {

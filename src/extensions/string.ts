@@ -1,5 +1,5 @@
-import type { MatchPattern, Nullable } from "@/types/lib";
-import { definePropertyIfAbsent } from '@/helpers/utils';
+import type { MatchPattern, Nullable } from "../types/lib.js";
+import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
   interface String {

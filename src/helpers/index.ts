@@ -1,4 +1,4 @@
-import * as helpers from './all';
+import * as helpers from './all.js';
 
 type BuiltinXHelpers = typeof helpers;
 

@@ -1,5 +1,5 @@
-import type { MatchPattern } from '@/types/lib';
-import { definePropertyIfAbsent } from '@/helpers/utils';
+import type { MatchPattern } from '../types/lib.js';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 type ArrayPredicate<T> = (value: T, index: number, array: readonly T[]) => boolean;
 

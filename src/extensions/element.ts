@@ -1,5 +1,5 @@
-import { definePropertyIfAbsent } from '@/helpers/utils';
-import { isNewLineTextNode } from './node';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
+import { isNewLineTextNode } from './node.js';
 
 type StyledElement = Element & ElementCSSInlineStyle;
 

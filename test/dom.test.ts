@@ -1,8 +1,8 @@
 import { expectTypeOf } from 'vitest';
-import { BuiltinX as importedBuiltinX } from '@/index';
-import { Element as elementHelpers } from '@/helpers/element';
-import { Node as nodeHelpers } from '@/helpers/node';
-import { TimeSpan } from '@/utils/time-span';
+import { BuiltinX as importedBuiltinX } from '@/index.js';
+import { Element as elementHelpers } from '@/helpers/element.js';
+import { Node as nodeHelpers } from '@/helpers/node.js';
+import { TimeSpan } from '@/utils/time-span.js';
 
 describe('BuiltinX DOM methods across iframe realms', () => {
   let frame: HTMLIFrameElement;

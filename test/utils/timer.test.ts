@@ -1,4 +1,4 @@
-import { Timer } from '@/utils/timer';
+import { Timer } from '@/utils/timer.js';
 
 describe('Timer.every', () => {
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { TimeSpan } from '@/utils/time-span';
+import { TimeSpan } from './time-span.js';
 
 const MAX_TIMEOUT_MS = 2_147_483_647;
 

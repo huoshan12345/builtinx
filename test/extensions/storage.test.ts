@@ -1,4 +1,4 @@
-import { TimeSpan } from "@/utils/time-span";
+import { TimeSpan } from "@/utils/time-span.js";
 
 describe("Storage.prototype.setCache and getCache", () => {
   beforeEach(() => {

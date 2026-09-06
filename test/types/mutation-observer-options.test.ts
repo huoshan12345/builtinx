@@ -2,7 +2,7 @@ import {
   MutationObserverDebounceOptions,
   MutationObserverOptions,
   type MutationExclusion,
-} from '@/types/mutation-observer-options';
+} from '@/types/mutation-observer-options.js';
 
 describe('MutationObserverOptions defaults', () => {
   test('should initialize with the declared defaults', () => {

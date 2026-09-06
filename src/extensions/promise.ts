@@ -1,5 +1,5 @@
-import { definePropertyIfAbsent } from '@/helpers/utils';
-import type { AwaitableAction, Predicate } from '@/types/lib';
+import { definePropertyIfAbsent } from '../helpers/utils.js';
+import type { AwaitableAction, Predicate } from '../types/lib.js';
 
 declare global {
   interface PromiseConstructor {

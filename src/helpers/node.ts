@@ -1,5 +1,5 @@
-import { debounce } from './utils';
-import { DebounceMutationOptions } from '@/types/debounce-mutation-options';
+import { debounce } from './utils.js';
+import { DebounceMutationOptions } from '../types/debounce-mutation-options.js';
 
 export interface Node {
   /**

@@ -1,4 +1,4 @@
-import { Lazy } from '@/utils/lazy';
+import { Lazy } from '@/utils/lazy.js';
 
 describe('Lazy', () => {
   it('caches null as a successfully created value', () => {

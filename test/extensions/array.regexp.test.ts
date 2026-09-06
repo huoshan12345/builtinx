@@ -1,4 +1,4 @@
-import type { Extractor } from "@/types/lib";
+import type { Extractor } from "@/types/lib.js";
 
 describe("RegExpExecArray.prototype.replaceMatch", () => {
   it("replaces the matched substring in the original input", () => {
