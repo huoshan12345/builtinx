@@ -1,4 +1,4 @@
-import type { Nullable, QueryParam, QueryParams } from '../types/lib.js';
+import type { Nullable, QueryParam, QueryParams, URLLike } from '../types/lib.js';
 import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
@@ -120,6 +120,16 @@ declare global {
      * the supplied value is not converted when the key already exists.
      */
     trySetParam(key: string, value: unknown): boolean;
+
+    /**
+     * Without a base, returns this URL's pathname, search and hash.
+     * With a base, returns a reference to this URL relative to that base.
+     * String bases, including an empty string, are resolved against this URL first.
+     * Returns this URL's absolute href when a path-relative reference cannot preserve it.
+     * @example
+     * new URL('https://example.com/a/b/file').relative('https://example.com/a/'); // 'b/file'
+     */
+    relative(base?: URLLike): string;
   }
 }
 
@@ -235,6 +245,62 @@ function trySetParam(this: URL, key: string, value: unknown): boolean {
   return this.searchParams.trySet(key, value);
 };
 
+function relative(this: URL, base?: URLLike): string {
+  return base === undefined
+    ? this.pathname + this.search + this.hash
+    : getRelativeUrl(new URL(base, this), this);
+
+  function getRelativeUrl(fromUrl: URL, toUrl: URL): string {
+    if (
+      fromUrl.protocol !== toUrl.protocol ||
+      fromUrl.host !== toUrl.host ||
+      fromUrl.username !== toUrl.username ||
+      fromUrl.password !== toUrl.password ||
+      !fromUrl.pathname.startsWith('/') ||
+      !toUrl.pathname.startsWith('/')
+    ) {
+      return toUrl.href;
+    }
+
+    // Keep empty segments: repeated and trailing slashes are part of the URL path.
+    const fromParts = fromUrl.pathname.split('/');
+    const toParts = toUrl.pathname.split('/');
+    fromParts.pop();
+
+    // The target's last segment must remain, even when it matches a base directory.
+    let commonLength = 0;
+    while (
+      commonLength < fromParts.length &&
+      commonLength < toParts.length - 1 &&
+      fromParts[commonLength] === toParts[commonLength]
+    ) {
+      commonLength++;
+    }
+
+    let relativePath = [
+      ...Array(fromParts.length - commonLength).fill('..'),
+      ...toParts.slice(commonLength),
+    ].join('/');
+
+    // Avoid an empty reference, an absolute path, or a first segment parsed as a scheme.
+    if (!relativePath || relativePath.startsWith('/') || /^[^/]*:/.test(relativePath)) {
+      relativePath = './' + relativePath;
+    }
+
+    // Unlike search/hash getters, the serialized suffix preserves empty '?' and '#'.
+    const suffixIndex = toUrl.href.search(/[?#]/);
+    const suffix = suffixIndex < 0 ? '' : toUrl.href.slice(suffixIndex);
+    const reference = relativePath + suffix;
+
+    try {
+      return new URL(reference, fromUrl).href === toUrl.href ? reference : toUrl.href;
+    } catch {
+      // Opaque paths and protocol-specific rules may prevent relative resolution.
+      return toUrl.href;
+    }
+  }
+};
+
 definePropertyIfAbsent(URL.prototype, 'setParam', setParam);
 definePropertyIfAbsent(URL.prototype, 'getParam', getParam);
 definePropertyIfAbsent(URL.prototype, 'getNumberParam', getNumberParam);
@@ -252,3 +318,4 @@ definePropertyIfAbsent(URL.prototype, 'hasNoParams', hasNoParams);
 definePropertyIfAbsent(URL.prototype, 'hasParams', hasParams);
 definePropertyIfAbsent(URL.prototype, 'tryDeleteParam', tryDeleteParam);
 definePropertyIfAbsent(URL.prototype, 'trySetParam', trySetParam);
+definePropertyIfAbsent(URL.prototype, 'relative', relative);
