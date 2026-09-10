@@ -150,7 +150,8 @@ function setParamsFrom(this: URL, params: Iterable<QueryParam>) {
 };
 
 function deleteParam(this: URL, key: string, value?: unknown) {
-  this.searchParams.delete(key, String.from(value));
+  const v = value == null ? undefined : String(value);
+  this.searchParams.delete(key, v);
   return this;
 };
 
@@ -211,11 +212,11 @@ function hasParams(this: URL): boolean {
 }
 
 function tryDeleteParam(this: URL, key: string, value?: unknown): boolean {
-  return this.searchParams.tryDelete(key, String.from(value));
+  return this.searchParams.tryDelete(key, value);
 }
 
 function trySetParam(this: URL, key: string, value: unknown): boolean {
-  return this.searchParams.trySet(key, String.from(value));
+  return this.searchParams.trySet(key, value);
 };
 
 definePropertyIfAbsent(URL.prototype, 'setParam', setParam);

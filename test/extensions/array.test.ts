@@ -108,6 +108,62 @@ describe("Array.isArrayLike", () => {
   });
 });
 
+describe("Array.isArrayOf", () => {
+  it("checks only whether the value is an array when no item guard is supplied", () => {
+    const value: unknown = ["text"];
+
+    expect(Array.isArrayOf<number>(value)).toBe(true);
+  });
+
+  it("accepts empty, mixed and sparse arrays without an item guard", () => {
+    expect(Array.isArrayOf([])).toBe(true);
+    expect(Array.isArrayOf([1, "text", null])).toBe(true);
+    expect(Array.isArrayOf(new Array(1))).toBe(true);
+  });
+
+  it("rejects non-arrays without an item guard", () => {
+    expect(Array.isArrayOf(null)).toBe(false);
+    expect(Array.isArrayOf(undefined)).toBe(false);
+    expect(Array.isArrayOf("text")).toBe(false);
+    expect(Array.isArrayOf(42)).toBe(false);
+    expect(Array.isArrayOf({ 0: "text", length: 1 })).toBe(false);
+    expect(Array.isArrayOf(new Uint8Array([1, 2]))).toBe(false);
+  });
+
+  it("requires every element to satisfy the supplied item guard", () => {
+    const isNumber = (item: unknown): item is number => typeof item === "number";
+
+    expect(Array.isArrayOf([1, 2], isNumber)).toBe(true);
+    expect(Array.isArrayOf([], isNumber)).toBe(true);
+    expect(Array.isArrayOf([1, "text"], isNumber)).toBe(false);
+    expect(Array.isArrayOf([undefined], isNumber)).toBe(false);
+    expect(Array.isArrayOf("text", isNumber)).toBe(false);
+  });
+
+  it("accepts an array of empty slots without calling the item guard", () => {
+    const value: unknown = new Array(1);
+    let guardCalls = 0;
+    const itemGuard = (item: unknown): item is number => {
+      guardCalls++;
+      return typeof item === "number";
+    };
+
+    expect(Array.isArrayOf(value, itemGuard)).toBe(true);
+    expect(guardCalls).toBe(0);
+  });
+
+  it("validates present elements while skipping empty slots", () => {
+    const value: unknown[] = new Array(2);
+    const isNumber = (item: unknown): item is number => typeof item === "number";
+
+    value[1] = 42;
+    expect(Array.isArrayOf(value, isNumber)).toBe(true);
+
+    value[1] = undefined;
+    expect(Array.isArrayOf(value, isNumber)).toBe(false);
+  });
+});
+
 describe("Array.prototype.hasIndex", () => {
   it("returns true for valid positive indexes", () => {
     const arr = [10, 20, 30];

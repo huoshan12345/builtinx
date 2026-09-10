@@ -53,19 +53,19 @@ declare global {
      *
      * When multiple values exist for the same key, only the last value is considered effective.
      */
-    hasEffectiveValue(key: string, unknown: string): boolean;
+    hasEffectiveValue(key: string, value: unknown): boolean;
 
     /**
      * Sets the value only when the key does not already exist.
      */
-    trySet(name: string, value: unknown): URLSearchParams;
+    trySet(name: string, value: unknown): boolean;
 
     /**
      * Appends one or more values for the key.
      *
      * Nullish values are appended as empty strings.
      */
-    add(name: string, value: OneOrMany<unknown>): URLSearchParams;
+    add<T>(name: string, value: Nullishable<T> | Nullishable<T>[]): URLSearchParams;
 
     /**
      * Returns whether the parameter list is empty.
@@ -82,7 +82,7 @@ declare global {
      * When `value` is provided, only matching values are deleted.
      * Returns whether the key was deleted.
      */
-    tryDelete(key: string, unknown?: string): boolean;
+    tryDelete(key: string, value?: unknown): boolean;
   }
 }
 
@@ -151,15 +151,17 @@ function setBool(this: URLSearchParams, key: string, value: boolean, removeIfFal
   return this;
 };
 
-function trySet(this: URLSearchParams, name: string, value: unknown): URLSearchParams {
-  if (!this.has(name)) {
-    this.set(name, String.from(value));
+function trySet(this: URLSearchParams, name: string, value: unknown): boolean {
+  if (this.has(name)) {
+    return false;
   }
-  return this;
+
+  this.set(name, String.from(value));
+  return true;
 };
 
-function add(this: URLSearchParams, name: string, value: OneOrMany<unknown>): URLSearchParams {
-  if (Array.isArrayOf<unknown>(value)) {
+function add<T>(this: URLSearchParams, name: string, value: Nullishable<T> | Nullishable<T>[]): URLSearchParams {
+  if (Array.isArray(value)) {
     for (const v of value) {
       this.append(name, String.from(v));
     }
@@ -178,7 +180,7 @@ function isNotEmpty(this: URLSearchParams): boolean {
 }
 
 function tryDelete(this: URLSearchParams, key: string, value?: unknown): boolean {
-  const v = String.from(value);
+  const v = value == null ? undefined : String(value);
   const has = this.has(key, v);
   if (has) {
     this.delete(key, v);

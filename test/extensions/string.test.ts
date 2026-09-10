@@ -224,6 +224,20 @@ describe("String.prototype.equalsIgnoreAsciiCase", () => {
   });
 });
 
+describe("String.from", () => {
+  it("returns a string when toString returns a non-string primitive", () => {
+    const value = { toString: () => 42 };
+
+    expect(String.from(value)).toBe("42");
+  });
+
+  it("uses Symbol.toPrimitive when converting an object to a string", () => {
+    const value = { [Symbol.toPrimitive]: () => "custom" };
+
+    expect(String.from(value)).toBe("custom");
+  });
+});
+
 describe("String.prototype.trimChars", () => {
   it("trims ASCII characters from both ends", () => {
     expect("--hello--".trimChars("-")).toBe("hello");

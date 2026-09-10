@@ -88,6 +88,23 @@ describe("URL.prototype.getNumberParam", () => {
 });
 
 describe("URL.prototype.hasParam", () => {
+  it("checks key existence when the value is explicitly null or undefined", () => {
+    const url = new URL("https://example.com/?a=1");
+
+    expect(url.hasParam("a", null)).toBe(true);
+    expect(url.hasParam("a", undefined)).toBe(true);
+    expect(url.hasParam("missing", null)).toBe(false);
+    expect(url.hasParam("missing", undefined)).toBe(false);
+  });
+
+  it("compares the effective value when an empty string is supplied", () => {
+    const url = new URL("https://example.com/?a=&a=1&b=1&b=");
+
+    expect(url.hasParam("a", "")).toBe(false);
+    expect(url.hasParam("b", "")).toBe(true);
+    expect(url.hasParam("missing", "")).toBe(false);
+  });
+
   it("checks for key existence", () => {
     const url = new URL("https://example.com/?a=1");
 
@@ -121,6 +138,37 @@ describe("URL.prototype.setParamsFrom", () => {
 });
 
 describe("URL.prototype.deleteParam", () => {
+  it("uses the same object conversion as trySetParam", () => {
+    const url = new URL("https://example.com/?b=2");
+    const value = { [Symbol.toPrimitive]: () => "custom" };
+
+    expect(url.trySetParam("a", value)).toBe(true);
+    expect(url.deleteParam("a", value)).toBe(url);
+    expect(url.search).toBe("?b=2");
+  });
+
+  it("deletes every value for the key when the filter is explicitly null", () => {
+    const url = new URL("https://example.com/?a=&a=1&b=2");
+
+    expect(url.deleteParam("a", null)).toBe(url);
+    expect(url.search).toBe("?b=2");
+  });
+
+  it("deletes every value for the key when value is explicitly undefined", () => {
+    const url = new URL("https://example.com/?a=1&a=&a=2&b=3");
+
+    expect(url.deleteParam("a", undefined)).toBe(url);
+    expect(url.search).toBe("?b=3");
+  });
+
+  it("deletes only empty values when an empty string is supplied", () => {
+    const url = new URL("https://example.com/?a=1&a=&a=2");
+
+    url.deleteParam("a", "");
+
+    expect(url.searchParams.getAll("a")).toEqual(["1", "2"]);
+  });
+
   it("deletes a parameter and returns the same instance", () => {
     const url = new URL("https://example.com/?a=1");
 
@@ -300,6 +348,42 @@ describe("URL.prototype.hasNoParams and hasParams", () => {
 });
 
 describe("URL.prototype.tryDeleteParam", () => {
+  it("uses the same object conversion as trySetParam", () => {
+    const url = new URL("https://example.com/?b=2");
+    const value = { [Symbol.toPrimitive]: () => "custom" };
+
+    expect(url.trySetParam("a", value)).toBe(true);
+    expect(url.tryDeleteParam("a", value)).toBe(true);
+    expect(url.search).toBe("?b=2");
+  });
+
+  it("deletes every value for the key when the filter is explicitly null", () => {
+    const url = new URL("https://example.com/?a=&a=1&b=2");
+
+    expect(url.tryDeleteParam("a", null)).toBe(true);
+    expect(url.search).toBe("?b=2");
+    expect(url.tryDeleteParam("a", null)).toBe(false);
+  });
+
+  it("deletes duplicate values without a filter and returns false on retry", () => {
+    const url = new URL("https://example.com/?a=1&a=&a=2&b=3");
+
+    expect(url.tryDeleteParam("a")).toBe(true);
+    expect(url.search).toBe("?b=3");
+    expect(url.tryDeleteParam("a")).toBe(false);
+  });
+
+  it("accepts unknown values and deletes only their matching entries", () => {
+    const url = new URL("https://example.com/?a=0&a=false&a=&a=1");
+    const value: unknown = false;
+
+    expect(url.hasParam("a", 1)).toBe(true);
+    expect(url.tryDeleteParam("a", value)).toBe(true);
+    expect(url.searchParams.getAll("a")).toEqual(["0", "", "1"]);
+    expect(url.deleteParam("a", 0)).toBe(url);
+    expect(url.searchParams.getAll("a")).toEqual(["", "1"]);
+  });
+
   it("deletes an existing parameter and returns true", () => {
     const url = new URL("https://example.com/path?a=1");
 
@@ -319,5 +403,34 @@ describe("URL.prototype.tryDeleteParam", () => {
 
     expect(url.tryDeleteParam("a", "2")).toBe(false);
     expect(url.href).toBe("https://example.com/path?a=1");
+  });
+});
+
+describe("URL.prototype.trySetParam", () => {
+  it.each([
+    [42, "42"],
+    [false, "false"],
+    [null, ""],
+    [undefined, ""],
+    ["", ""],
+  ])("sets %s only once and reports whether it changed the URL", (value, expected) => {
+    const url = new URL("https://example.com/?b=1");
+
+    const added: boolean = url.trySetParam("a", value);
+
+    expect(added).toBe(true);
+    expect(url.searchParams.get("a")).toBe(expected);
+    expect(url.trySetParam("a", "replacement")).toBe(false);
+    expect(url.searchParams.get("a")).toBe(expected);
+    expect(url.searchParams.get("b")).toBe("1");
+  });
+
+  it("does not convert a rejected value or alter duplicate existing values", () => {
+    const url = new URL("https://example.com/?a=&a=1");
+    const toString = vi.fn(() => "replacement");
+
+    expect(url.trySetParam("a", { toString })).toBe(false);
+    expect(toString).not.toHaveBeenCalled();
+    expect(url.searchParams.getAll("a")).toEqual(["", "1"]);
   });
 });

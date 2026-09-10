@@ -225,7 +225,7 @@ function trimChars(this: string, chars: string): string {
 };
 
 function from(value: unknown): string {
-  return value == null ? "" : value.toString();
+  return value == null ? "" : String(value);
 };
 
 definePropertyIfAbsent(String.prototype, 'contains', contains);

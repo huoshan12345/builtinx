@@ -162,6 +162,17 @@ describe("URLSearchParams.prototype.setFrom", () => {
 });
 
 describe("URLSearchParams.prototype.hasEffectiveValue", () => {
+  it("accepts unknown values and compares their string form with the last value", () => {
+    const params = new URLSearchParams("a=1&a=2&b=false&c=");
+    const value: unknown = 2;
+
+    expect(params.hasEffectiveValue("a", value)).toBe(true);
+    expect(params.hasEffectiveValue("a", 1)).toBe(false);
+    expect(params.hasEffectiveValue("b", false)).toBe(true);
+    expect(params.hasEffectiveValue("c", null)).toBe(true);
+    expect(params.hasEffectiveValue("missing", null)).toBe(false);
+  });
+
   it("returns the last value for the key", () => {
     const params = new URLSearchParams("a=1&a=2");
 
@@ -194,6 +205,15 @@ describe("URLSearchParams.prototype.hasEffectiveValue", () => {
 });
 
 describe("URLSearchParams.prototype.trySet", () => {
+  it("preserves an existing empty value without converting the rejected value", () => {
+    const params = new URLSearchParams("a=");
+    const toString = vi.fn(() => "replacement");
+
+    expect(params.trySet("a", { toString })).toBe(false);
+    expect(toString).not.toHaveBeenCalled();
+    expect(params.getAll("a")).toEqual([""]);
+  });
+
   it("sets the value when the key does not exist", () => {
     const params = new URLSearchParams();
 
@@ -210,20 +230,34 @@ describe("URLSearchParams.prototype.trySet", () => {
     expect(params.getAll("a")).toEqual(["1"]);
   });
 
-  it("returns the same instance", () => {
+  it("returns true when the value is set successfully", () => {
     const params = new URLSearchParams();
 
-    expect(params.trySet("a", "1")).toBe(params);
+    expect(params.trySet("a", "1")).toBe(true);
+  });
+
+  it("returns false when the key already exists", () => {
+    const params = new URLSearchParams();
+    expect(params.trySet("a", "1")).toBe(true);
+    expect(params.trySet("a", "2")).toBe(false);
   });
 });
 
 describe("URLSearchParams.prototype.add", () => {
+  it("appends a typed array as a single string value", () => {
+    const params = new URLSearchParams();
+
+    params.add("a", new Uint8Array([1, 2]));
+
+    expect(params.getAll("a")).toEqual(["1,2"]);
+  });
+
   it("appends a single value", () => {
     const params = new URLSearchParams();
 
-    params.add("a", "1");
+    params.add("a", "hello");
 
-    expect(params.getAll("a")).toEqual(["1"]);
+    expect(params.getAll("a")).toEqual(["hello"]);
   });
 
   it("appends multiple values from an array", () => {
@@ -270,6 +304,43 @@ describe("URLSearchParams.prototype.isEmpty and isNotEmpty", () => {
 });
 
 describe("URLSearchParams.prototype.tryDelete", () => {
+  it("uses the same object conversion as trySet and hasEffectiveValue", () => {
+    const params = new URLSearchParams();
+    const value = { [Symbol.toPrimitive]: () => "custom" };
+
+    expect(params.trySet("a", value)).toBe(true);
+    expect(params.hasEffectiveValue("a", value)).toBe(true);
+    expect(params.tryDelete("a", value)).toBe(true);
+    expect(params.has("a")).toBe(false);
+  });
+
+  it("deletes every value for the key when the filter is explicitly null", () => {
+    const params = new URLSearchParams("a=&a=1&b=2");
+
+    expect(params.tryDelete("a", null)).toBe(true);
+    expect(params.toString()).toBe("b=2");
+    expect(params.tryDelete("a", null)).toBe(false);
+  });
+
+  it("deletes every value for the key when value is explicitly undefined", () => {
+    const params = new URLSearchParams("a=1&a=&a=2&b=3");
+
+    expect(params.tryDelete("a", undefined)).toBe(true);
+    expect(params.toString()).toBe("b=3");
+    expect(params.tryDelete("a")).toBe(false);
+  });
+
+  it("converts unknown filters and preserves values that do not match", () => {
+    const params = new URLSearchParams("a=0&a=false&a=&a=1");
+    const value: unknown = false;
+
+    expect(params.tryDelete("a", value)).toBe(true);
+    expect(params.tryDelete("a", 0)).toBe(true);
+    expect(params.getAll("a")).toEqual(["", "1"]);
+    expect(params.tryDelete("a", "")).toBe(true);
+    expect(params.getAll("a")).toEqual(["1"]);
+  });
+
   it("deletes an existing key and returns true", () => {
     const params = new URLSearchParams("a=1&b=2");
 
