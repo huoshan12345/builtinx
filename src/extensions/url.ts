@@ -34,7 +34,7 @@ declare global {
      *
      * When `value` is provided, only the effective last value is compared.
      */
-    hasParam(key: string, value?: string): boolean;
+    hasParam(key: string, value?: unknown): boolean;
 
     /**
      * Sets query parameters from another iterable source using `set` semantics.
@@ -44,7 +44,7 @@ declare global {
     /**
      * Deletes a query parameter and returns the URL.
      */
-    deleteParam(key: string, value?: string): URL;
+    deleteParam(key: string, value?: unknown): URL;
 
     /**
      * Returns existing query parameters for the specified keys.
@@ -101,7 +101,9 @@ declare global {
      * When `value` is provided, only matching values are deleted.
      * Returns whether a parameter was deleted.
      */
-    tryDeleteParam(key: string, value?: string): boolean;
+    tryDeleteParam(key: string, value?: unknown): boolean;
+
+    trySetParam(key: string, value: unknown): boolean;
   }
 }
 
@@ -136,7 +138,7 @@ function getNumberParam(this: URL, key: string) {
   });
 };
 
-function hasParam(this: URL, key: string, value?: string) {
+function hasParam(this: URL, key: string, value?: unknown) {
   return value == undefined
     ? this.searchParams.has(key)
     : this.searchParams.hasEffectiveValue(key, value);
@@ -147,8 +149,8 @@ function setParamsFrom(this: URL, params: Iterable<QueryParam>) {
   return this;
 };
 
-function deleteParam(this: URL, key: string, value?: string) {
-  this.searchParams.delete(key, value);
+function deleteParam(this: URL, key: string, value?: unknown) {
+  this.searchParams.delete(key, String.from(value));
   return this;
 };
 
@@ -208,10 +210,13 @@ function hasParams(this: URL): boolean {
   return this.searchParams.isNotEmpty();
 }
 
-function tryDeleteParam(this: URL, key: string, value?: string): boolean {
-  const deleted = this.searchParams.tryDelete(key, value);
-  return deleted;
+function tryDeleteParam(this: URL, key: string, value?: unknown): boolean {
+  return this.searchParams.tryDelete(key, String.from(value));
 }
+
+function trySetParam(this: URL, key: string, value: unknown): boolean {
+  return this.searchParams.trySet(key, String.from(value));
+};
 
 definePropertyIfAbsent(URL.prototype, 'setParam', setParam);
 definePropertyIfAbsent(URL.prototype, 'getParam', getParam);
@@ -229,3 +234,4 @@ definePropertyIfAbsent(URL.prototype, 'clone', clone);
 definePropertyIfAbsent(URL.prototype, 'hasNoParams', hasNoParams);
 definePropertyIfAbsent(URL.prototype, 'hasParams', hasParams);
 definePropertyIfAbsent(URL.prototype, 'tryDeleteParam', tryDeleteParam);
+definePropertyIfAbsent(URL.prototype, 'trySetParam', trySetParam);

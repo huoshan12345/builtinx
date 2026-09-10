@@ -197,6 +197,8 @@ declare global {
      * - indexed element access semantics
      */
     isArrayLike<T>(value: unknown): value is ArrayLike<T>;
+
+    isArrayOf<T>(value: unknown, itemGuard?: (item: unknown) => item is T): value is T[];
   }
 }
 
@@ -464,6 +466,10 @@ function allContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T)
   return values.every(value => patterns.every(pattern => value.contains(pattern)));
 };
 
+function isArrayOf<T>(value: unknown, itemGuard?: (item: unknown) => item is T): value is T[] {
+  return Array.isArray(value) && (itemGuard ? value.every(itemGuard) : true);
+}
+
 definePropertyIfAbsent(Array, 'cast', cast);
 definePropertyIfAbsent(Array, 'isArrayLike', isArrayLike);
 definePropertyIfAbsent(Array.prototype, 'hasIndex', hasIndex);
@@ -489,3 +495,4 @@ definePropertyIfAbsent(Array.prototype, 'anyContainsAll', anyContainsAll);
 definePropertyIfAbsent(Array.prototype, 'allContainsAny', allContainsAny);
 definePropertyIfAbsent(Array.prototype, 'allContainsAll', allContainsAll);
 definePropertyIfAbsent(Array.prototype, 'remove', remove);
+definePropertyIfAbsent(Array, 'isArrayOf', isArrayOf);

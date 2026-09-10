@@ -1,4 +1,4 @@
-import type { Nullishable } from '../types/lib.js';
+import type { Nullishable, OneOrMany } from '../types/lib.js';
 import { definePropertyIfAbsent } from '../helpers/utils.js';
 
 declare global {
@@ -53,19 +53,19 @@ declare global {
      *
      * When multiple values exist for the same key, only the last value is considered effective.
      */
-    hasEffectiveValue(key: string, value: string): boolean;
+    hasEffectiveValue(key: string, unknown: string): boolean;
 
     /**
      * Sets the value only when the key does not already exist.
      */
-    trySet(name: string, value: string): URLSearchParams;
+    trySet(name: string, value: unknown): URLSearchParams;
 
     /**
      * Appends one or more values for the key.
      *
      * Nullish values are appended as empty strings.
      */
-    add(name: string, value: Nullishable<string> | Nullishable<string>[]): URLSearchParams;
+    add(name: string, value: OneOrMany<unknown>): URLSearchParams;
 
     /**
      * Returns whether the parameter list is empty.
@@ -82,7 +82,7 @@ declare global {
      * When `value` is provided, only matching values are deleted.
      * Returns whether the key was deleted.
      */
-    tryDelete(key: string, value?: string): boolean;
+    tryDelete(key: string, unknown?: string): boolean;
   }
 }
 
@@ -129,7 +129,7 @@ function setFrom(this: URLSearchParams, params: Iterable<[string, string]>): URL
 
 function getEffectiveValue(this: URLSearchParams, key: string): string | null {
   const values = this.getAll(key);
-  // NOTE: This is a consequence of jsdom using vm contexts to execute JavaScript on the page. 
+  // NOTE: This is a consequence of jsdom using vm contexts to execute JavaScript on the page.
   // Each vm context has its own copy of the globals, including Array.
   // https://github.com/jsdom/jsdom/issues/2261
   const arr = Array.cast(values);
@@ -138,8 +138,8 @@ function getEffectiveValue(this: URLSearchParams, key: string): string | null {
     : null;
 };
 
-function hasEffectiveValue(this: URLSearchParams, key: string, value: string): boolean {
-  return this.getEffectiveValue(key) === value;
+function hasEffectiveValue(this: URLSearchParams, key: string, value: unknown): boolean {
+  return this.getEffectiveValue(key) === String.from(value);
 };
 
 function setBool(this: URLSearchParams, key: string, value: boolean, removeIfFalse: boolean = true): URLSearchParams {
@@ -151,20 +151,20 @@ function setBool(this: URLSearchParams, key: string, value: boolean, removeIfFal
   return this;
 };
 
-function trySet(this: URLSearchParams, name: string, value: string): URLSearchParams {
+function trySet(this: URLSearchParams, name: string, value: unknown): URLSearchParams {
   if (!this.has(name)) {
-    this.set(name, value);
+    this.set(name, String.from(value));
   }
   return this;
 };
 
-function add(this: URLSearchParams, name: string, value: Nullishable<string> | Nullishable<string>[]): URLSearchParams {
-  if (Array.isArray(value)) {
+function add(this: URLSearchParams, name: string, value: OneOrMany<unknown>): URLSearchParams {
+  if (Array.isArrayOf<unknown>(value)) {
     for (const v of value) {
-      this.append(name, v ?? '');
+      this.append(name, String.from(v));
     }
   } else {
-    this.append(name, value ?? '');
+    this.append(name, String.from(value));
   }
   return this;
 };
@@ -177,10 +177,11 @@ function isNotEmpty(this: URLSearchParams): boolean {
   return this.size > 0;
 }
 
-function tryDelete(this: URLSearchParams, key: string, value?: string): boolean {
-  const has = this.has(key, value);
+function tryDelete(this: URLSearchParams, key: string, value?: unknown): boolean {
+  const v = String.from(value);
+  const has = this.has(key, v);
   if (has) {
-    this.delete(key, value);
+    this.delete(key, v);
   }
   return has;
 }

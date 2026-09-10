@@ -87,6 +87,10 @@ declare global {
      */
     trimChars(chars: string): string;
   }
+
+  interface StringConstructor {
+    from(value: unknown): string;
+  }
 }
 
 function contains(this: string, pattern: MatchPattern) {
@@ -220,6 +224,10 @@ function trimChars(this: string, chars: string): string {
     : codePoints.slice(start, end + 1).join("");
 };
 
+function from(value: unknown): string {
+  return value == null ? "" : value.toString();
+};
+
 definePropertyIfAbsent(String.prototype, 'contains', contains);
 definePropertyIfAbsent(String.prototype, 'matches', matches);
 definePropertyIfAbsent(String.prototype, 'skipUntil', skipUntil);
@@ -232,3 +240,4 @@ definePropertyIfAbsent(String.prototype, 'parenthesize', parenthesize);
 definePropertyIfAbsent(String.prototype, 'unescapeHtml', unescapeHtml);
 definePropertyIfAbsent(String.prototype, 'equalsIgnoreAsciiCase', equalsIgnoreAsciiCase);
 definePropertyIfAbsent(String.prototype, 'trimChars', trimChars);
+definePropertyIfAbsent(String, 'from', from);
