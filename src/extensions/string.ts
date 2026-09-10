@@ -89,6 +89,12 @@ declare global {
   }
 
   interface StringConstructor {
+    /**
+     * Converts null or undefined to an empty string, and other values using `String(value)`.
+     *
+     * Uses standard string conversion, including `Symbol.toPrimitive` when present.
+     * Conversion errors are propagated to the caller.
+     */
     from(value: unknown): string;
   }
 }

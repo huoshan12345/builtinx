@@ -32,7 +32,9 @@ declare global {
     /**
      * Returns whether a query parameter exists.
      *
-     * When `value` is provided, only the effective last value is compared.
+     * Omitting `value`, or passing null or undefined, checks only key existence.
+     * Other values are converted using `String(value)` and compared with the last
+     * value for the key. Pass an empty string to check for an empty last value.
      */
     hasParam(key: string, value?: unknown): boolean;
 
@@ -43,6 +45,10 @@ declare global {
 
     /**
      * Deletes a query parameter and returns the URL.
+     *
+     * Omitting `value`, or passing null or undefined, deletes all entries for the key.
+     * Other values are converted using `String(value)` and only matching entries
+     * are deleted. Pass an empty string to delete only empty values.
      */
     deleteParam(key: string, value?: unknown): URL;
 
@@ -98,11 +104,21 @@ declare global {
     /**
      * Deletes a query parameter when it exists.
      *
-     * When `value` is provided, only matching values are deleted.
-     * Returns whether a parameter was deleted.
+     * Omitting `value`, or passing null or undefined, deletes all entries for the key.
+     * Other values are converted using `String(value)` and only matching entries
+     * are deleted. Pass an empty string to delete only empty values.
+     * Returns true when any entries were deleted, or false when nothing matched.
      */
     tryDeleteParam(key: string, value?: unknown): boolean;
 
+    /**
+     * Sets a query parameter only when the key does not already exist.
+     *
+     * Converts the value using `String.from`: nullish values are stored as empty strings.
+     * Returns true when a value is written, or false when the key already exists.
+     * Existing values, including empty strings and duplicates, are preserved;
+     * the supplied value is not converted when the key already exists.
+     */
     trySetParam(key: string, value: unknown): boolean;
   }
 }

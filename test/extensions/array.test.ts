@@ -140,27 +140,41 @@ describe("Array.isArrayOf", () => {
     expect(Array.isArrayOf("text", isNumber)).toBe(false);
   });
 
-  it("accepts an array of empty slots without calling the item guard", () => {
+  it("passes empty slots to the item guard as undefined", () => {
     const value: unknown = new Array(1);
-    let guardCalls = 0;
+    const checked: unknown[] = [];
     const itemGuard = (item: unknown): item is number => {
-      guardCalls++;
+      checked.push(item);
       return typeof item === "number";
     };
 
-    expect(Array.isArrayOf(value, itemGuard)).toBe(true);
-    expect(guardCalls).toBe(0);
+    expect(Array.isArrayOf(value, itemGuard)).toBe(false);
+    expect(checked).toEqual([undefined]);
   });
 
-  it("validates present elements while skipping empty slots", () => {
+  it("accepts sparse arrays only when the item guard accepts undefined", () => {
     const value: unknown[] = new Array(2);
     const isNumber = (item: unknown): item is number => typeof item === "number";
+    const isOptionalNumber = (item: unknown): item is number | undefined =>
+      item === undefined || typeof item === "number";
 
     value[1] = 42;
-    expect(Array.isArrayOf(value, isNumber)).toBe(true);
-
-    value[1] = undefined;
     expect(Array.isArrayOf(value, isNumber)).toBe(false);
+    expect(Array.isArrayOf(value, isOptionalNumber)).toBe(true);
+
+    value[1] = "text";
+    expect(Array.isArrayOf(value, isOptionalNumber)).toBe(false);
+  });
+
+  it("stops checking after the first rejected element", () => {
+    const checked: unknown[] = [];
+    const itemGuard = (item: unknown): item is number => {
+      checked.push(item);
+      return typeof item === "number";
+    };
+
+    expect(Array.isArrayOf([1, "text", 2], itemGuard)).toBe(false);
+    expect(checked).toEqual([1, "text"]);
   });
 });
 

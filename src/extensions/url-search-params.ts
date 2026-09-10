@@ -52,18 +52,29 @@ declare global {
      * Returns whether the effective value of the key equals the specified value.
      *
      * When multiple values exist for the same key, only the last value is considered effective.
+     * Converts the comparison value using `String.from`: nullish values match an empty string.
+     * Returns false when the key does not exist, including for a nullish comparison value.
      */
     hasEffectiveValue(key: string, value: unknown): boolean;
 
     /**
      * Sets the value only when the key does not already exist.
+     *
+     * Converts the value using `String.from`: nullish values are stored as empty strings.
+     * Returns true when a value is written, or false when the key already exists.
+     * Existing values, including empty strings and duplicates, are preserved;
+     * the supplied value is not converted when the key already exists.
      */
     trySet(name: string, value: unknown): boolean;
 
     /**
      * Appends one or more values for the key.
      *
-     * Nullish values are appended as empty strings.
+     * Arrays are expanded one level and their values are appended in iteration order.
+     * Other inputs, including strings, typed arrays and other iterables, are single values.
+     * Each appended value is converted using `String.from`; nullish values and sparse
+     * array slots become empty strings. Empty arrays append nothing.
+     * Preserves existing values and returns this instance for chaining.
      */
     add<T>(name: string, value: Nullishable<T> | Nullishable<T>[]): URLSearchParams;
 
@@ -77,10 +88,11 @@ declare global {
     isNotEmpty(): boolean;
 
     /**
-     * Deletes the key only when it exists.
+     * Deletes matching entries and returns whether any entries were deleted.
      *
-     * When `value` is provided, only matching values are deleted.
-     * Returns whether the key was deleted.
+     * Omitting `value`, or passing null or undefined, deletes all entries for the key.
+     * Other values are converted using `String(value)` and only matching entries
+     * are deleted. Pass an empty string to delete only empty values.
      */
     tryDelete(key: string, value?: unknown): boolean;
   }

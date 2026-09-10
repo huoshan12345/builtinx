@@ -93,6 +93,19 @@ Static helpers:
 
 - `Array.cast(value)` returns the original array or converts an iterable/array-like value with `Array.from`.
 - `Array.isArrayLike(value)` checks for string, typed-array, array, or object values with a safe non-negative integer `length`.
+- `Array.isArrayOf(value, itemGuard?)` checks whether a value is an array. With a guard, it validates each iterated value and stops at the first rejection. Sparse slots are checked as `undefined`; empty arrays pass without calling the guard.
+
+Without a guard, `Array.isArrayOf` behaves like `Array.isArray`. Supplying a generic
+type argument alone does not validate element types at runtime.
+
+```ts
+const isNumber = (value: unknown): value is number => typeof value === "number";
+
+Array.isArrayOf([1, 2], isNumber);       // true
+Array.isArrayOf([1, "2"], isNumber);     // false
+Array.isArrayOf(new Array(1), isNumber); // false: the guard receives undefined
+Array.isArrayOf(new Array(1));           // true: only checks whether it is an array
+```
 
 Instance helpers:
 
@@ -112,6 +125,17 @@ const byParity = items.groupBy(x => x % 2);
 ```
 
 ### String and RegExp
+
+`String.from(value)` returns `""` for `null` or `undefined`, and otherwise uses
+`String(value)`. It honors standard string conversion, including
+`Symbol.toPrimitive`, and propagates conversion errors.
+
+```ts
+String.from(null);        // ""
+String.from(undefined);   // ""
+String.from(42);          // "42"
+String.from(false);       // "false"
+```
 
 String helpers:
 
@@ -139,7 +163,7 @@ RegExp helpers:
 
 URL helpers:
 
-- Query management: `setParam`, `getParam`, `getNumberParam`, `hasParam`, `setParamsFrom`, `deleteParam`, `tryDeleteParam`, `getParams`, `setBool`.
+- Query management: `setParam`, `trySetParam`, `getParam`, `getNumberParam`, `hasParam`, `setParamsFrom`, `deleteParam`, `tryDeleteParam`, `getParams`, `setBool`.
 - Navigation and mutation: `goto`, `setHost`, `setProtocol`, `resolve`.
 
 `URLEx` helpers:
@@ -150,7 +174,7 @@ URL helpers:
 
 URLSearchParams helpers:
 
-- `getInt`, `getBool`, `setBool`, `any`, `distinct`, `setFrom`, `getEffectiveValue`, `hasEffectiveValue`, `trySet`, `add`.
+- `getInt`, `getBool`, `setBool`, `any`, `distinct`, `setFrom`, `getEffectiveValue`, `hasEffectiveValue`, `trySet`, `tryDelete`, `add`.
 
 ```ts
 const url = URLEx.fromSegments("https://example.com/app", "users", "42");
@@ -158,6 +182,50 @@ const url = URLEx.fromSegments("https://example.com/app", "users", "42");
 url
   .setParam("tab", "profile")
   .setBool("readonly", false); // removes the key by default
+```
+
+`URLSearchParams.trySet` and `URL.trySetParam` return a boolean: `true` when a value
+is written, or `false` when the key already exists. Existing empty values and
+duplicates are preserved. Values are converted with `String.from`, so nullish
+inputs are stored as empty strings. If the key exists, the supplied value is not
+converted. These methods do not return the receiver for chaining.
+
+`URLSearchParams.add` expands ordinary arrays one level and appends each value
+using `String.from`. Strings, typed arrays and other iterables are single values.
+An empty array appends nothing; nullish values and sparse slots append empty
+strings. Existing values are preserved, and `add` returns the same instance.
+
+```ts
+const params = new URLSearchParams();
+
+params.trySet("page", 1);       // true
+params.trySet("page", 2);       // false: page remains "1"
+params.add("tag", ["ts", null]);
+params.getAll("tag");           // ["ts", ""]
+params.add("word", "hello");    // one value: "hello"
+params.add("bytes", new Uint8Array([1, 2])); // one value: "1,2"
+```
+
+Query comparison and deletion use the following rules:
+
+| Method | Omitted, `null` or `undefined` value | Other values | Return value |
+| --- | --- | --- | --- |
+| `URL.hasParam(key, value?)` | Checks key existence. | Compares `String(value)` with the last value for the key. | `boolean` |
+| `URLSearchParams.hasEffectiveValue(key, value)` | Value is required; explicit nullish values compare with `""`. | Compares `String(value)` with the last value for the key. | `boolean`; false for a missing key. |
+| `URL.deleteParam(key, value?)` | Deletes all entries for the key. | Deletes every entry matching `String(value)`. | The same URL. |
+| `URL.tryDeleteParam(key, value?)` / `URLSearchParams.tryDelete(key, value?)` | Deletes all entries for the key. | Deletes every entry matching `String(value)`. | Whether any entries were deleted. |
+
+Pass `""` explicitly when checking for or deleting empty values:
+
+```ts
+const filtered = new URL("https://example.com/?a=&a=1");
+
+filtered.hasParam("a", null);      // true: the key exists
+filtered.hasParam("a", "");        // false: the last value is "1"
+filtered.tryDeleteParam("a", "");  // true: only a= is removed
+filtered.search;                   // "?a=1"
+filtered.tryDeleteParam("a", null); // true: removes the remaining entries for a
+filtered.tryDeleteParam("a");      // false: the key no longer exists
 ```
 
 ### Promise, Math, Error, Console, Fetch Helpers

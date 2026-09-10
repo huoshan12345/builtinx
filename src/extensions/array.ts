@@ -198,6 +198,15 @@ declare global {
      */
     isArrayLike<T>(value: unknown): value is ArrayLike<T>;
 
+    /**
+     * Checks whether the value is an array, optionally validating its elements.
+     *
+     * Without `itemGuard`, behaves like `Array.isArray`; the generic type `T`
+     * is not validated at runtime.
+     * With `itemGuard`, checks values in iteration order and stops at the first
+     * rejected value. Sparse array slots are checked as undefined.
+     * Empty arrays return true without calling the guard.
+     */
     isArrayOf<T>(value: unknown, itemGuard?: (item: unknown) => item is T): value is T[];
   }
 }
@@ -467,7 +476,19 @@ function allContainsAll<T>(this: T[], patterns: MatchPattern[], selector: (t: T)
 };
 
 function isArrayOf<T>(value: unknown, itemGuard?: (item: unknown) => item is T): value is T[] {
-  return Array.isArray(value) && (itemGuard ? value.every(itemGuard) : true);
+  if (!Array.isArray(value)) {
+    return false;
+  }
+
+  if (itemGuard) {
+    for (const item of value) {
+      if (!itemGuard(item)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 definePropertyIfAbsent(Array, 'cast', cast);
