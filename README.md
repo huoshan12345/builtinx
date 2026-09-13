@@ -310,14 +310,46 @@ Available helpers include:
 - `BuiltinX.FileInfo`: filename splitting, extension handling, illegal-character replacement, compression-extension detection.
 - `BuiltinX.Http`: `downloadText`, `download`, `request`. `downloadText` returns a promise and defaults to `text/plain`.
 - `BuiltinX.Node`: debounced mutation callback helper.
-- `BuiltinX.Type`: precise runtime type names and common type guards.
+- `BuiltinX.getType`: runtime type names.
+- `BuiltinX.isString`, `isNumber`, `isArray`, `isObject`, `isFunction`, and `isNil`: common type guards.
+- `BuiltinX.isNode` and `BuiltinX.isElement`: DOM type guards, including objects from accessible iframes.
 - `BuiltinX.debounce`: general debouncing utility.
 
 ```ts
 BuiltinX.FileInfo.splitName("archive.tar"); // ["archive", ".tar"]
-BuiltinX.Type.get(new Map());               // "Map"
-BuiltinX.Type.is.str("hello");              // true
+BuiltinX.getType(new Map());                // "Map"
+BuiltinX.isString("hello");                 // true
 ```
+
+### DOM Type Guards
+
+`BuiltinX.isNode(value: unknown): value is Node` accepts DOM nodes, including
+elements, text, comments, documents, document fragments (including shadow roots),
+and attributes. `BuiltinX.isElement(value: unknown): value is Element` accepts
+HTML, SVG, and XML elements; other node types return `false`.
+
+Both functions validate the receiver through native DOM getters. They support
+nodes from accessible iframes, detached nodes, documents without a window, and
+nodes adopted into another document. Null, undefined, primitives, and objects
+that merely imitate DOM properties or inherit from DOM prototypes return `false`.
+
+```ts
+import { BuiltinX } from "builtinx";
+
+BuiltinX.isNode(document.createTextNode("hello"));    // true
+BuiltinX.isElement(document.createTextNode("hello")); // false
+BuiltinX.isElement(document.createElement("div"));    // true
+BuiltinX.isElement({ nodeType: 1, tagName: "DIV" });   // false
+
+const value: unknown = document.querySelector("main");
+if (BuiltinX.isElement(value)) {
+  value.setAttribute("data-ready", "true"); // value is narrowed to Element
+}
+```
+
+These guards are available from `builtinx` without importing `builtinx/dom`.
+The current implementation reads `Node.prototype` and `Element.prototype` when
+the module loads, so importing `builtinx` requires those DOM globals to exist.
 
 ## Utility Classes
 
