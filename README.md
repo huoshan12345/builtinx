@@ -81,7 +81,7 @@ const data = await BuiltinX.Http.request("/api/items");
 | Entry | Purpose |
 | --- | --- |
 | `builtinx` | Core extensions, helper namespace, utility classes, and shared types. |
-| `builtinx/dom` | DOM prototype extensions and static `BuiltinX.Element`, `BuiltinX.Node`, and `BuiltinX.Storage` methods. |
+| `builtinx/dom` | DOM prototype extensions, static `BuiltinX.Element`, `BuiltinX.Node`, and `BuiltinX.Storage` methods, and the `BuiltinX.isNode` / `BuiltinX.isElement` type guards. |
 
 ## Prototype Extensions
 
@@ -312,7 +312,7 @@ Available helpers include:
 - `BuiltinX.Node`: debounced mutation callback helper.
 - `BuiltinX.getType`: runtime type names.
 - `BuiltinX.isString`, `isNumber`, `isArray`, `isObject`, `isFunction`, and `isNil`: common type guards.
-- `BuiltinX.isNode` and `BuiltinX.isElement`: DOM type guards, including objects from accessible iframes.
+- `BuiltinX.isNode` and `BuiltinX.isElement`: DOM type guards, including objects from accessible iframes; require importing `builtinx/dom`.
 - `BuiltinX.debounce`: general debouncing utility.
 
 ```ts
@@ -335,6 +335,7 @@ that merely imitate DOM properties or inherit from DOM prototypes return `false`
 
 ```ts
 import { BuiltinX } from "builtinx";
+import "builtinx/dom";
 
 BuiltinX.isNode(document.createTextNode("hello"));    // true
 BuiltinX.isElement(document.createTextNode("hello")); // false
@@ -347,9 +348,10 @@ if (BuiltinX.isElement(value)) {
 }
 ```
 
-These guards are available from `builtinx` without importing `builtinx/dom`.
-The current implementation reads `Node.prototype` and `Element.prototype` when
-the module loads, so importing `builtinx` requires those DOM globals to exist.
+Importing `builtinx/dom` adds these guards to the existing `BuiltinX` namespace
+and makes their TypeScript declarations available. The DOM entry requires
+`Node` and `Element` globals. Importing only `builtinx` does not load the guards
+and works in environments without those DOM globals.
 
 ## Utility Classes
 
