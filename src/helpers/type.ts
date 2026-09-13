@@ -1,53 +1,93 @@
-const is = {
-  str: (v: unknown): v is string => typeof v === 'string',
-  num: (v: unknown): v is number => typeof v === 'number',
-  arr: (v: unknown): v is any[] => Array.isArray(v),
-  obj: (v: unknown): v is Record<PropertyKey, unknown> => Object.prototype.toString.call(v) === '[object Object]',
-  fun: (v: unknown): v is Function => typeof v === 'function',
-  nil: (v: unknown): v is null | undefined => v === null || v === undefined,
-};
-
-export interface Type {
-  /**
-   * Returns the precise type of a value with a hybrid casing strategy.
-   * * - **Lowercase**: For standard `typeof` results (string, number, boolean, etc.) 
-   * to maintain consistency with native JavaScript behavior.
-   * - **PascalCase**: For specific object types (Array, Date, Map, etc.) or 
-   * custom classes to preserve their identity.
-   * * @example
-   * Type.get("hi")       // "string"
-   * Type.get([])         // "Array"
-   * Type.get(new Date()) // "Date"
-   * Type.get({})         // "object"
-   * * @param val - The value to inspect.
-   * @returns A string representing the precise type.
-   */
-  get(val: unknown): string;
-
-  /** 
-   * A collection of type guard functions for common types.
-   */
-  is: typeof is;
+/** Returns true if the value is a string primitive. */
+export function isString(value: unknown): value is string {
+  return typeof value === 'string';
 }
 
-export const Type: Type = {
-  get(val: unknown): string {
-    // Special handling for null (since typeof null === 'object')
-    if (val === null)
-      return 'null';
+/** Returns true if the value is a number primitive, including NaN and Infinity. */
+export function isNumber(value: unknown): value is number {
+  return typeof value === 'number';
+}
 
-    const t = typeof val;
+/** Returns true if the value is an array. */
+export function isArray(value: unknown): value is any[] {
+  return Array.isArray(value);
+}
 
-    if (t !== 'object')
-      return t;
+/** Returns true if the value has the Object tag, including untagged class instances. */
+export function isObject(value: unknown): value is Record<PropertyKey, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
 
-    const rawTag = Object.prototype.toString.call(val).slice(8, -1);
+/** Returns true if the value is a function. */
+export function isFunction(value: unknown): value is Function {
+  return typeof value === 'function';
+}
 
-    // if the raw tag is 'Object' then return 'object', 
-    // otherwise return the raw tag (e.g., 'Array', 'Date', etc.)
-    return rawTag === 'Object'
-      ? 'object'
-      : rawTag;
-  },
-  is,
-};
+/** Returns true if the value is null or undefined. */
+export function isNil(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
+/**
+ * Returns a runtime type name using typeof for primitives and functions,
+ * and Object.prototype.toString for objects. Null and the Object tag
+ * are returned as "null" and "object", respectively.
+ * @example
+ * BuiltinX.getType("hi")       // "string"
+ * BuiltinX.getType([])         // "Array"
+ * BuiltinX.getType(new Date()) // "Date"
+ * BuiltinX.getType({})         // "object"
+ * @param value The value to inspect.
+ * @returns A string representing the value's runtime type.
+ */
+export function getType(value: unknown): string {
+  // Special handling for null (since typeof null === 'object').
+  if (value === null)
+    return 'null';
+
+  const t = typeof value;
+
+  if (t !== 'object')
+    return t;
+
+  const rawTag = Object.prototype.toString.call(value).slice(8, -1);
+
+  // Normalize the Object tag and preserve other tags as returned.
+  return rawTag === 'Object'
+    ? 'object'
+    : rawTag;
+}
+
+const getNodeType = Object.getOwnPropertyDescriptor(Node.prototype, 'nodeType')!.get!;
+
+export function isNode(value: unknown): value is Node {
+  if (value == null || typeof value !== 'object') {
+    return false;
+  }
+
+  try {
+    // Same trick as isElement: the native getter brand-checks the receiver
+    // independent of realm/prototype identity, so this works across iframes too.
+    getNodeType.call(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const getElementTagName = Object.getOwnPropertyDescriptor(Element.prototype, 'tagName')!.get!;
+
+export function isElement(value: unknown): value is Element {
+  if (value == null || typeof value !== "object") {
+    return false;
+  }
+
+  try {
+    // The native getter validates the Element receiver without relying on its realm
+    // or ownerDocument, which may have no window or may change after adoption.
+    getElementTagName.call(value);
+    return true;
+  } catch {
+    return false;
+  }
+}

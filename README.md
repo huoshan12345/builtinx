@@ -310,13 +310,14 @@ Available helpers include:
 - `BuiltinX.FileInfo`: filename splitting, extension handling, illegal-character replacement, compression-extension detection.
 - `BuiltinX.Http`: `downloadText`, `download`, `request`. `downloadText` returns a promise and defaults to `text/plain`.
 - `BuiltinX.Node`: debounced mutation callback helper.
-- `BuiltinX.Type`: precise runtime type names and common type guards.
+- `BuiltinX.getType`: runtime type names.
+- `BuiltinX.isString`, `isNumber`, `isArray`, `isObject`, `isFunction`, and `isNil`: common type guards.
 - `BuiltinX.debounce`: general debouncing utility.
 
 ```ts
 BuiltinX.FileInfo.splitName("archive.tar"); // ["archive", ".tar"]
-BuiltinX.Type.get(new Map());               // "Map"
-BuiltinX.Type.is.str("hello");              // true
+BuiltinX.getType(new Map());                // "Map"
+BuiltinX.isString("hello");                 // true
 ```
 
 ## Utility Classes
