@@ -8,6 +8,7 @@ declare module './helpers/index.js' {
     Element: typeof helpers.Element & typeof extensions.Element;
     Node: typeof helpers.Node & typeof extensions.Node;
     Storage: typeof extensions.Storage;
+    HTMLImageElement: typeof extensions.HTMLImageElement;
     isNode: typeof typeGuards.isNode;
     isElement: typeof typeGuards.isElement;
   }
@@ -16,4 +17,5 @@ declare module './helpers/index.js' {
 Object.assign(BuiltinX.Element, extensions.Element);
 Object.assign(BuiltinX.Node, extensions.Node);
 BuiltinX.Storage = extensions.Storage;
+BuiltinX.HTMLImageElement = extensions.HTMLImageElement;
 Object.assign(BuiltinX, typeGuards);

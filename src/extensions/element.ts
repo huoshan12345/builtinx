@@ -1,5 +1,5 @@
 import { definePropertyIfAbsent } from '../helpers/utils.js';
-import { isLineBreakTextNode } from './node.js';
+import { isBr, isLineBreakTextNode } from './node.js';
 
 type StyledElement = Element & ElementCSSInlineStyle;
 
@@ -24,6 +24,9 @@ declare global {
      * Trims leading <br> elements and newline text nodes.
      */
     trimLeadingBrs<T extends Element>(this: T): T;
+
+    /** Trims direct leading/trailing breaks and line-break text, skipping and preserving comments. */
+    trimBrs<T extends Element>(this: T): T;
 
     /**
      * Gets the element's bounding rectangle relative to the document.
@@ -79,6 +82,38 @@ export function trimLeadingBrs<T extends Element>(element: T): T {
   return element;
 }
 
+/**
+ * Removes direct leading/trailing HTML breaks and whitespace text containing CR/LF.
+ * Comments are skipped and preserved; other nodes, including plain spaces, stop trimming.
+ */
+export function trimBrs<T extends Element>(element: T): T {
+  let first = element.firstChild;
+  while (first) {
+    const next = first.nextSibling;
+    if (first.nodeType !== Node.COMMENT_NODE) {
+      if (!isBr(first) && !isLineBreakTextNode(first)) {
+        break;
+      }
+      element.removeChild(first);
+    }
+    first = next;
+  }
+
+  let last = element.lastChild;
+  while (last) {
+    const previous = last.previousSibling;
+    if (last.nodeType !== Node.COMMENT_NODE) {
+      if (!isBr(last) && !isLineBreakTextNode(last)) {
+        break;
+      }
+      element.removeChild(last);
+    }
+    last = previous;
+  }
+
+  return element;
+}
+
 /** Gets bounds relative to the element's own document, including its window's scroll offsets. */
 export function getDocumentRect(element: Element): DOMRectReadOnly {
   const rect = element.getBoundingClientRect();
@@ -104,6 +139,10 @@ definePropertyIfAbsent(Element.prototype, "collapseBrs", function <T extends Ele
 
 definePropertyIfAbsent(Element.prototype, "trimLeadingBrs", function <T extends Element>(this: T): T {
   return trimLeadingBrs(this);
+});
+
+definePropertyIfAbsent(Element.prototype, "trimBrs", function <T extends Element>(this: T): T {
+  return trimBrs(this);
 });
 
 definePropertyIfAbsent(Element.prototype, "getDocumentRect", function (this: Element): DOMRectReadOnly {

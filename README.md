@@ -256,7 +256,17 @@ Load these with `import "builtinx/dom"` after the core entry.
 
 - `Element.setVisible(value)` hides with `display: none` when false and restores the previous inline display when true. It supports HTML and SVG elements and returns the element for chaining. Restoring display does not guarantee visibility when other styles or ancestors hide the element.
 - `Element.collapseBrs()`, `Element.trimLeadingBrs()`.
+- `Element.trimBrs()` removes leading and trailing direct HTML `<br>` elements and whitespace Text nodes containing CR/LF. It skips and preserves comments; plain spaces, tabs, empty Text nodes, and other content stop trimming. Descendants are not trimmed. The static form is `BuiltinX.Element.trimBrs(element)`.
 - `Element.getDocumentRect()`.
+
+### HTMLImageElement
+
+- `HTMLImageElement.whenLoaded()` returns a Promise resolving with the image on success and rejecting with an `Error` on failure, including an already-completed failure with a source. With no source it waits for a future event. While waiting, source changes follow the element's next `load`/`error` event; removing a source does not cancel the wait. Both listeners are removed on settlement. The static form `BuiltinX.HTMLImageElement.whenLoaded(image)` also supports iframe images.
+
+```ts
+const image = await img.whenLoaded();
+await processImage(image);
+```
 
 ### Node and MutationObserver
 
