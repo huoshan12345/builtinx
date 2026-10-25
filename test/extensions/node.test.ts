@@ -86,35 +86,35 @@ describe("Node extensions", () => {
     });
   });
 
-  describe("Node.prototype.isNewLineTextNode", () => {
+  describe("Node.prototype.isLineBreakTextNode", () => {
     it("returns true for newline text node", () => {
       const node = document.createTextNode("\n");
 
-      expect(node.isNewLineTextNode()).toBe(true);
+      expect(node.isLineBreakTextNode()).toBe(true);
     });
 
     it("returns false for normal text node", () => {
       const node = document.createTextNode("abc");
 
-      expect(node.isNewLineTextNode()).toBe(false);
+      expect(node.isLineBreakTextNode()).toBe(false);
     });
 
     it("returns false for whitespace text node that is not newline", () => {
       const node = document.createTextNode(" ");
 
-      expect(node.isNewLineTextNode()).toBe(false);
+      expect(node.isLineBreakTextNode()).toBe(false);
     });
 
     it("returns false for element node", () => {
       const div = document.createElement("div");
 
-      expect(div.isNewLineTextNode()).toBe(false);
+      expect(div.isLineBreakTextNode()).toBe(false);
     });
 
     it("returns true for CRLF text node", () => {
       const node = document.createTextNode("\r\n");
 
-      expect(node.isNewLineTextNode()).toBe(true);
+      expect(node.isLineBreakTextNode()).toBe(true);
     });
   });
 });

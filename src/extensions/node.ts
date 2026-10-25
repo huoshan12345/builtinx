@@ -29,9 +29,15 @@ declare global {
     isTextNode(): boolean;
 
     /**
-     * Returns true if this node is a Text node that contains only whitespace and new line characters.
+     * Returns true for a Text node containing only whitespace and at least one CR or LF.
      */
-    isNewLineTextNode(): boolean;
+    isLineBreakTextNode(): boolean;
+
+    /**
+     * Returns true for a Text node containing only JavaScript whitespace (\s).
+     * Empty Text nodes also return true.
+     */
+    isWhitespaceTextNode(): boolean;
 
     /**
      * Observe mutations on this node and its subtree.
@@ -80,13 +86,21 @@ export function ownText(node: Node): string {
   return text;
 };
 
-const regNewLineText = /^\s*[\r\n]\s*$/;
+const regLineBreakText = /^\s*[\r\n]\s*$/;
 
-/** Tests for a text node containing only whitespace and at least one newline. */
-export function isNewLineTextNode(node: Node): boolean {
+/** Tests for a text node containing only whitespace and at least one CR or LF. */
+export function isLineBreakTextNode(node: Node): boolean {
   return node.nodeType === Node.TEXT_NODE
-    && regNewLineText.test(node.nodeValue ?? '');
+    && regLineBreakText.test(node.nodeValue ?? '');
 };
+
+const regWhitespaceText = /^\s*$/;
+
+/** Tests for a text node containing only JavaScript whitespace (\s), including empty text. */
+export function isWhitespaceTextNode(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE
+    && regWhitespaceText.test(node.nodeValue ?? '');
+}
 
 /** Tests the node type without depending on its window's prototype chain. */
 export function isTextNode(node: Node): boolean {
@@ -170,8 +184,12 @@ definePropertyIfAbsent(Node.prototype, "ownText", function (this: Node): string 
   return ownText(this);
 });
 
-definePropertyIfAbsent(Node.prototype, "isNewLineTextNode", function (this: Node): boolean {
-  return isNewLineTextNode(this);
+definePropertyIfAbsent(Node.prototype, "isLineBreakTextNode", function (this: Node): boolean {
+  return isLineBreakTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isWhitespaceTextNode", function (this: Node): boolean {
+  return isWhitespaceTextNode(this);
 });
 
 definePropertyIfAbsent(Node.prototype, "isTextNode", function (this: Node): boolean {

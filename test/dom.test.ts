@@ -37,7 +37,7 @@ describe('BuiltinX DOM methods across iframe realms', () => {
     div.append('World');
 
     expect(div.trimLeadingBrs).toBeUndefined();
-    expect(div.firstChild!.isNewLineTextNode).toBeUndefined();
+    expect(div.firstChild!.isLineBreakTextNode).toBeUndefined();
     expect(BuiltinX.Element.trimLeadingBrs(div)).toBe(div);
     expect(BuiltinX.Element.collapseBrs(div)).toBe(div);
     expect(div.innerHTML).toBe('Hello<br>World');
@@ -92,8 +92,8 @@ describe('BuiltinX DOM methods across iframe realms', () => {
     expect(BuiltinX.Node.ownText(newline)).toBe('\n');
     expect(BuiltinX.Node.isTextNode(newline)).toBe(true);
     expect(BuiltinX.Node.isTextNode(div)).toBe(false);
-    expect(BuiltinX.Node.isNewLineTextNode(newline)).toBe(true);
-    expect(BuiltinX.Node.isNewLineTextNode(div.firstChild!)).toBe(false);
+    expect(BuiltinX.Node.isLineBreakTextNode(newline)).toBe(true);
+    expect(BuiltinX.Node.isLineBreakTextNode(div.firstChild!)).toBe(false);
   });
 
   it('observes iframe mutations without requiring iframe prototype extensions', async () => {

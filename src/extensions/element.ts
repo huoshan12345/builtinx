@@ -1,5 +1,5 @@
 import { definePropertyIfAbsent } from '../helpers/utils.js';
-import { isNewLineTextNode } from './node.js';
+import { isLineBreakTextNode } from './node.js';
 
 type StyledElement = Element & ElementCSSInlineStyle;
 
@@ -56,7 +56,7 @@ export function collapseBrs<T extends Element>(element: T): T {
       const next = item.nextSibling;
       // Sometimes there are many newline text nodes or consecutive <br> elements after a <br>, 
       // which are meaningless and can be removed directly.
-      if (next && (next.nodeName === 'BR' || isNewLineTextNode(next))) {
+      if (next && (next.nodeName === 'BR' || isLineBreakTextNode(next))) {
         next.remove();
       } else {
         break;
@@ -71,7 +71,7 @@ export function collapseBrs<T extends Element>(element: T): T {
 export function trimLeadingBrs<T extends Element>(element: T): T {
   while (element.childNodes.length > 0) {
     const first = element.childNodes[0];
-    if (first.nodeName !== 'BR' && !isNewLineTextNode(first)) {
+    if (first.nodeName !== 'BR' && !isLineBreakTextNode(first)) {
       break;
     }
     first.remove();
