@@ -301,6 +301,7 @@ window.deleteParam('page');
 
 - `Node.ownText()` returns direct child text only.
 - `Node.isTextNode()` identifies Text nodes.
+- `Node.isCommentNode()` identifies Comment nodes. The static form `BuiltinX.Node.isCommentNode(node)` also supports nodes from other windows.
 - `Node.isLineBreakTextNode()` identifies Text nodes containing only whitespace and at least one CR or LF.
 - `Node.isWhitespaceTextNode()` identifies Text nodes containing only JavaScript whitespace (`\s`), including empty Text nodes. Both whitespace predicates also have static forms on `BuiltinX.Node`.
 - `Node.isBr()` and `Node.isFont()` identify HTML `<br>` and `<font>` elements, including in XHTML documents.

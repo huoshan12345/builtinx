@@ -28,6 +28,9 @@ declare global {
      */
     isTextNode(): boolean;
 
+    /** Returns true if this node is a Comment node. */
+    isCommentNode(): boolean;
+
     /**
      * Returns true for a Text node containing only whitespace and at least one CR or LF.
      */
@@ -106,6 +109,11 @@ export function isWhitespaceTextNode(node: Node): boolean {
 export function isTextNode(node: Node): boolean {
   return node.nodeType === Node.TEXT_NODE;
 };
+
+/** Tests for a Comment node without depending on its window's prototype chain. */
+export function isCommentNode(node: Node): boolean {
+  return node.nodeType === Node.COMMENT_NODE;
+}
 
 function createInitialMutationRecord(target: Node): MutationRecord {
   const document = target.ownerDocument ?? target as Document;
@@ -194,6 +202,10 @@ definePropertyIfAbsent(Node.prototype, "isWhitespaceTextNode", function (this: N
 
 definePropertyIfAbsent(Node.prototype, "isTextNode", function (this: Node): boolean {
   return isTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isCommentNode", function (this: Node): boolean {
+  return isCommentNode(this);
 });
 
 definePropertyIfAbsent(Node.prototype, "observe", function (
