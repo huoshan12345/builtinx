@@ -1,7 +1,7 @@
 {
   "name": "builtinx",
   "author": "huoshan12345",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Extensions for JavaScript built-ins and web platform objects",
   "homepage": "https://github.com/huoshan12345/builtinx#readme",
   "repository": {
@@ -44,13 +44,13 @@
   },
   "devDependencies": {
     "@phiberber/pinst": "^3.0.1",
-    "@types/node": "^26.4.1",
-    "npm-run-all2": "^9.0.3",
+    "@types/node": "^26.6.5",
+    "npm-run-all2": "^9.0.4",
     "shx": "^0.4.0",
-    "tsc-alias": "^1.9.4",
+    "tsc-alias": "^1.9.9",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2",
-    "vitest": "^4.1.11",
-    "vitest-canvas-mock": "^1.1.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "vitest-canvas-mock": "^1.2.0"
   }
 }
