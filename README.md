@@ -361,7 +361,7 @@ The main entry exports these utility classes and types:
 - `Stack<T>`: LIFO stack with `push`, `pop`, `peek`, `clear`, `size`, and iteration.
 - `Lazy<T>`: lazy value wrapper with `value`, `isValueCreated`, and `reset`. A `null` or `undefined` factory result still counts as created and remains cached until reset.
 - `StringBuilder`: chainable string accumulation.
-- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds`.
+- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse(str, ...formats)` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds` by default, or tries custom formats in order when supplied.
 - `Timer.every(timeSpanOrMs, signal?)`: async generator that yields at an interval until it is closed or the optional `AbortSignal` aborts.
 - `HttpError`: error type used by `BuiltinX.Http.request`.
 
@@ -375,6 +375,62 @@ for await (const _ of Timer.every(TimeSpan.fromSeconds(1))) {
   console.log("tick");
 }
 ```
+
+### TimeSpan parsing and formatting
+
+```ts
+TimeSpan.parse("1.2:3:4"); // default format
+TimeSpan.parse("01:30", "HH:mm:ss", "HH:mm"); // first matching format
+TimeSpan.parse("-2 01:30:00.125", "D HH:mm:ss.SSS");
+TimeSpan.parse("1:30 pm", "h:mm a");
+TimeSpan.parse("2 days 03h", "D[ days ]HH[h]");
+
+const formats = ["HH:mm:ss.SSS", "HH:mm:ss.sss", "HH:mm:ss"];
+TimeSpan.parse("01:30:00.125", ...formats);
+
+const duration = TimeSpan.from(2, 13, 4, 5, 6);
+duration.toString("D HH:mm:ss.SSS"); // "2 13:04:05.006"
+duration.toString("dd h:mm:ss.sss a"); // "02 1:04:05.006 pm"
+duration.toString(); // "2.13:4:5" (original default output)
+```
+
+Custom formats use these Day.js-style tokens for duration components:
+
+| Token | Component | Accepted values |
+| --- | --- | --- |
+| `D`, `d` | Days | One or more digits |
+| `DD`, `dd` | Days | At least two digits, including values over 99 |
+| `H`, `HH` | Hours | 0–23 |
+| `h`, `hh` | Hours with `A` or `a` | 1–12 |
+| `m`, `mm` | Minutes | 0–59 |
+| `s`, `ss` | Seconds | 0–59 |
+| `SSS`, `sss` | Milliseconds | Exactly three digits, 000–999 |
+| `A` | Meridiem | `AM` or `PM` |
+| `a` | Meridiem | `am` or `pm` |
+
+Single hour, minute, and second tokens accept one or two digits; doubled tokens
+require exactly two. `d`/`dd` are aliases for day counts, not weekdays.
+`12 AM` means hour 0 and `12 PM` means hour 12. `h`/`hh` require `A`/`a`;
+`H`/`HH` cannot be combined with them. Missing components default to zero.
+A leading `-` negates the whole duration. Enclose literal text in `[brackets]`;
+punctuation outside brackets is matched literally.
+
+Every supplied format is validated before matching. Unsupported tokens, duplicate
+components, and invalid meridiem combinations throw. Inputs must match a supplied
+format completely, including case, spacing, digit widths, and component ranges;
+out-of-range components allow the next format to be tried. If none matches, parsing
+throws. Millisecond totals outside the safe integer range throw `RangeError`.
+Omitting formats preserves the existing default parser's behavior.
+
+`toString(format)` uses the same tokens and literal syntax. Single tokens produce
+unpadded components; doubled tokens pad to at least two digits, and milliseconds
+always use three digits. Components use absolute values, with one leading `-` for
+negative durations. Hours, minutes, and seconds are component values rather than
+totals; omitted components are not displayed or rounded. Formatting allows repeated
+tokens and standalone `h`/`hh` or `A`/`a`. Empty formats produce an empty body, and
+literal-only formats are supported. Unsupported tokens and malformed brackets throw.
+Calling `toString()` without a format preserves its original output, including its
+negative-component notation and omission of milliseconds.
 
 ## TypeScript
 
