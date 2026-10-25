@@ -86,6 +86,39 @@ describe("Node extensions", () => {
     });
   });
 
+  describe("Node.isCommentNode", () => {
+    const cases: [string, () => Node, boolean][] = [
+      ['comment', () => document.createComment('hello'), true],
+      ['empty comment', () => document.createComment(''), true],
+      ['text resembling a comment', () => document.createTextNode('<!--hello-->'), false],
+      ['empty text', () => document.createTextNode(''), false],
+      ['element containing a comment', () => {
+        const element = document.createElement('div');
+        element.append(document.createComment('hello'));
+        return element;
+      }, false],
+      ['document', () => document, false],
+      ['document fragment', () => document.createDocumentFragment(), false],
+      ['attribute', () => document.createAttribute('title'), false],
+    ];
+
+    it.each(cases)('classifies %s through prototype and static calls', (_, createNode, expected) => {
+      const node = createNode();
+
+      expect(node.isCommentNode()).toBe(expected);
+      expect(BuiltinX.Node.isCommentNode(node)).toBe(expected);
+    });
+
+    it('registers a non-enumerable prototype method', () => {
+      expect(Object.getOwnPropertyDescriptor(Node.prototype, 'isCommentNode')).toMatchObject({
+        value: expect.any(Function),
+        enumerable: false,
+        writable: true,
+        configurable: true,
+      });
+    });
+  });
+
   describe("Node.prototype.isLineBreakTextNode", () => {
     it("returns true for newline text node", () => {
       const node = document.createTextNode("\n");

@@ -96,6 +96,24 @@ describe('BuiltinX DOM methods across iframe realms', () => {
     expect(BuiltinX.Node.isLineBreakTextNode(div.firstChild!)).toBe(false);
   });
 
+  it('classifies iframe comments through the static method without installing extensions', () => {
+    const cases: [Node, boolean][] = [
+      [frameDocument.createComment('hello'), true],
+      [frameDocument.createComment(''), true],
+      [frameDocument.createTextNode('<!--hello-->'), false],
+      [frameDocument.createElement('div'), false],
+      [frameDocument.createDocumentFragment(), false],
+      [frameDocument, false],
+    ];
+
+    for (const [node, expected] of cases) {
+      expect(node instanceof Node).toBe(false);
+      expect(node.isCommentNode).toBeUndefined();
+      expect(BuiltinX.Node.isCommentNode(node)).toBe(expected);
+      expect(node.isCommentNode).toBeUndefined();
+    }
+  });
+
   it('observes iframe mutations without requiring iframe prototype extensions', async () => {
     const div = frameDocument.createElement('div');
     const callback = vi.fn();
