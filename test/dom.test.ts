@@ -37,7 +37,7 @@ describe('BuiltinX DOM methods across iframe realms', () => {
     div.append('World');
 
     expect(div.trimLeadingBrs).toBeUndefined();
-    expect(div.firstChild!.isNewLineTextNode).toBeUndefined();
+    expect(div.firstChild!.isLineBreakTextNode).toBeUndefined();
     expect(BuiltinX.Element.trimLeadingBrs(div)).toBe(div);
     expect(BuiltinX.Element.collapseBrs(div)).toBe(div);
     expect(div.innerHTML).toBe('Hello<br>World');
@@ -92,8 +92,26 @@ describe('BuiltinX DOM methods across iframe realms', () => {
     expect(BuiltinX.Node.ownText(newline)).toBe('\n');
     expect(BuiltinX.Node.isTextNode(newline)).toBe(true);
     expect(BuiltinX.Node.isTextNode(div)).toBe(false);
-    expect(BuiltinX.Node.isNewLineTextNode(newline)).toBe(true);
-    expect(BuiltinX.Node.isNewLineTextNode(div.firstChild!)).toBe(false);
+    expect(BuiltinX.Node.isLineBreakTextNode(newline)).toBe(true);
+    expect(BuiltinX.Node.isLineBreakTextNode(div.firstChild!)).toBe(false);
+  });
+
+  it('classifies iframe comments through the static method without installing extensions', () => {
+    const cases: [Node, boolean][] = [
+      [frameDocument.createComment('hello'), true],
+      [frameDocument.createComment(''), true],
+      [frameDocument.createTextNode('<!--hello-->'), false],
+      [frameDocument.createElement('div'), false],
+      [frameDocument.createDocumentFragment(), false],
+      [frameDocument, false],
+    ];
+
+    for (const [node, expected] of cases) {
+      expect(node instanceof Node).toBe(false);
+      expect(node.isCommentNode).toBeUndefined();
+      expect(BuiltinX.Node.isCommentNode(node)).toBe(expected);
+      expect(node.isCommentNode).toBeUndefined();
+    }
   });
 
   it('observes iframe mutations without requiring iframe prototype extensions', async () => {

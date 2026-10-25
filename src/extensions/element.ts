@@ -1,7 +1,6 @@
 import { definePropertyIfAbsent } from '../helpers/utils.js';
-import { isNewLineTextNode } from './node.js';
-
-type StyledElement = Element & ElementCSSInlineStyle;
+import { isBr, isLineBreakTextNode } from './node.js';
+import type { StyledElement } from '../types/dom.js';
 
 declare global {
   interface Element {
@@ -24,6 +23,9 @@ declare global {
      * Trims leading <br> elements and newline text nodes.
      */
     trimLeadingBrs<T extends Element>(this: T): T;
+
+    /** Trims direct leading/trailing breaks and line-break text, skipping and preserving comments. */
+    trimBrs<T extends Element>(this: T): T;
 
     /**
      * Gets the element's bounding rectangle relative to the document.
@@ -56,7 +58,7 @@ export function collapseBrs<T extends Element>(element: T): T {
       const next = item.nextSibling;
       // Sometimes there are many newline text nodes or consecutive <br> elements after a <br>, 
       // which are meaningless and can be removed directly.
-      if (next && (next.nodeName === 'BR' || isNewLineTextNode(next))) {
+      if (next && (next.nodeName === 'BR' || isLineBreakTextNode(next))) {
         next.remove();
       } else {
         break;
@@ -71,11 +73,43 @@ export function collapseBrs<T extends Element>(element: T): T {
 export function trimLeadingBrs<T extends Element>(element: T): T {
   while (element.childNodes.length > 0) {
     const first = element.childNodes[0];
-    if (first.nodeName !== 'BR' && !isNewLineTextNode(first)) {
+    if (first.nodeName !== 'BR' && !isLineBreakTextNode(first)) {
       break;
     }
     first.remove();
   }
+  return element;
+}
+
+/**
+ * Removes direct leading/trailing HTML breaks and whitespace text containing CR/LF.
+ * Comments are skipped and preserved; other nodes, including plain spaces, stop trimming.
+ */
+export function trimBrs<T extends Element>(element: T): T {
+  let first = element.firstChild;
+  while (first) {
+    const next = first.nextSibling;
+    if (first.nodeType !== Node.COMMENT_NODE) {
+      if (!isBr(first) && !isLineBreakTextNode(first)) {
+        break;
+      }
+      element.removeChild(first);
+    }
+    first = next;
+  }
+
+  let last = element.lastChild;
+  while (last) {
+    const previous = last.previousSibling;
+    if (last.nodeType !== Node.COMMENT_NODE) {
+      if (!isBr(last) && !isLineBreakTextNode(last)) {
+        break;
+      }
+      element.removeChild(last);
+    }
+    last = previous;
+  }
+
   return element;
 }
 
@@ -104,6 +138,10 @@ definePropertyIfAbsent(Element.prototype, "collapseBrs", function <T extends Ele
 
 definePropertyIfAbsent(Element.prototype, "trimLeadingBrs", function <T extends Element>(this: T): T {
   return trimLeadingBrs(this);
+});
+
+definePropertyIfAbsent(Element.prototype, "trimBrs", function <T extends Element>(this: T): T {
+  return trimBrs(this);
 });
 
 definePropertyIfAbsent(Element.prototype, "getDocumentRect", function (this: Element): DOMRectReadOnly {

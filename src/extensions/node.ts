@@ -1,8 +1,22 @@
 import { debounce, definePropertyIfAbsent } from '../helpers/utils.js';
+import { isElement } from '../helpers/type.dom.js';
 import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '../types/mutation-observer-options.js';
 
 declare global {
   interface Node {
+    /** Returns true for an HTML <br> element, ignoring CSS. */
+    isBr(): boolean;
+
+    /** Returns true for an HTML <font> element, ignoring CSS. */
+    isFont(): boolean;
+
+    /**
+     * Tests membership in the fixed HTML block-tag list, ignoring CSS.
+     * Includes div, blockquote, p, li, td, th, body, section, article, main,
+     * aside, header, and footer; this is not an exhaustive list of block elements.
+     */
+    isBlockTag(): boolean;
+
     /**
      * Returns concatenated text of direct child text nodes only.
      * Descendant element text is excluded.
@@ -14,16 +28,50 @@ declare global {
      */
     isTextNode(): boolean;
 
+    /** Returns true if this node is a Comment node. */
+    isCommentNode(): boolean;
+
     /**
-     * Returns true if this node is a Text node that contains only whitespace and new line characters.
+     * Returns true for a Text node containing only whitespace and at least one CR or LF.
      */
-    isNewLineTextNode(): boolean;
+    isLineBreakTextNode(): boolean;
+
+    /**
+     * Returns true for a Text node containing only JavaScript whitespace (\s).
+     * Empty Text nodes also return true.
+     */
+    isWhitespaceTextNode(): boolean;
 
     /**
      * Observe mutations on this node and its subtree.
      */
     observe(callback: NodeMutationCallback, options?: MutationObserverOptionsInit): MutationObserver;
   }
+}
+
+const htmlNamespace = 'http://www.w3.org/1999/xhtml';
+const blockTags = new Set([
+  'div', 'blockquote', 'p', 'li', 'td', 'th', 'body',
+  'section', 'article', 'main', 'aside', 'header', 'footer',
+]);
+
+/** Tests for an HTML <br> element, including in XHTML documents. Ignores CSS. */
+export function isBr(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && node.localName === 'br';
+}
+
+/** Tests for an HTML <font> element, including in XHTML documents. Ignores CSS. */
+export function isFont(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && node.localName === 'font';
+}
+
+/**
+ * Tests for an HTML tag in the fixed list: div, blockquote, p, li, td, th, body,
+ * section, article, main, aside, header, footer. Ignores CSS and does not include
+ * every element with a default block display.
+ */
+export function isBlockTag(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && blockTags.has(node.localName);
 }
 
 /** Returns the combined text of direct child text nodes, or the text node's own content. */
@@ -41,18 +89,31 @@ export function ownText(node: Node): string {
   return text;
 };
 
-const regNewLineText = /^\s*[\r\n]\s*$/;
+const regLineBreakText = /^\s*[\r\n]\s*$/;
 
-/** Tests for a text node containing only whitespace and at least one newline. */
-export function isNewLineTextNode(node: Node): boolean {
+/** Tests for a text node containing only whitespace and at least one CR or LF. */
+export function isLineBreakTextNode(node: Node): boolean {
   return node.nodeType === Node.TEXT_NODE
-    && regNewLineText.test(node.nodeValue ?? '');
+    && regLineBreakText.test(node.nodeValue ?? '');
 };
+
+const regWhitespaceText = /^\s*$/;
+
+/** Tests for a text node containing only JavaScript whitespace (\s), including empty text. */
+export function isWhitespaceTextNode(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE
+    && regWhitespaceText.test(node.nodeValue ?? '');
+}
 
 /** Tests the node type without depending on its window's prototype chain. */
 export function isTextNode(node: Node): boolean {
   return node.nodeType === Node.TEXT_NODE;
 };
+
+/** Tests for a Comment node without depending on its window's prototype chain. */
+export function isCommentNode(node: Node): boolean {
+  return node.nodeType === Node.COMMENT_NODE;
+}
 
 function createInitialMutationRecord(target: Node): MutationRecord {
   const document = target.ownerDocument ?? target as Document;
@@ -115,16 +176,36 @@ export function observe(
   return observer;
 }
 
+definePropertyIfAbsent(Node.prototype, "isBr", function (this: Node): boolean {
+  return isBr(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isFont", function (this: Node): boolean {
+  return isFont(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isBlockTag", function (this: Node): boolean {
+  return isBlockTag(this);
+});
+
 definePropertyIfAbsent(Node.prototype, "ownText", function (this: Node): string {
   return ownText(this);
 });
 
-definePropertyIfAbsent(Node.prototype, "isNewLineTextNode", function (this: Node): boolean {
-  return isNewLineTextNode(this);
+definePropertyIfAbsent(Node.prototype, "isLineBreakTextNode", function (this: Node): boolean {
+  return isLineBreakTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isWhitespaceTextNode", function (this: Node): boolean {
+  return isWhitespaceTextNode(this);
 });
 
 definePropertyIfAbsent(Node.prototype, "isTextNode", function (this: Node): boolean {
   return isTextNode(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isCommentNode", function (this: Node): boolean {
+  return isCommentNode(this);
 });
 
 definePropertyIfAbsent(Node.prototype, "observe", function (

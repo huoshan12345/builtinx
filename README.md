@@ -256,12 +256,56 @@ Load these with `import "builtinx/dom"` after the core entry.
 
 - `Element.setVisible(value)` hides with `display: none` when false and restores the previous inline display when true. It supports HTML and SVG elements and returns the element for chaining. Restoring display does not guarantee visibility when other styles or ancestors hide the element.
 - `Element.collapseBrs()`, `Element.trimLeadingBrs()`.
+- `Element.trimBrs()` removes leading and trailing direct HTML `<br>` elements and whitespace Text nodes containing CR/LF. It skips and preserves comments; plain spaces, tabs, empty Text nodes, and other content stop trimming. Descendants are not trimmed. The static form is `BuiltinX.Element.trimBrs(element)`.
 - `Element.getDocumentRect()`.
+
+### HTMLImageElement
+
+- `HTMLImageElement.whenLoaded()` returns a Promise resolving with the image on success and rejecting with an `Error` on failure, including an already-completed failure with a source. With no source it waits for a future event. While waiting, source changes follow the element's next `load`/`error` event; removing a source does not cancel the wait. Both listeners are removed on settlement. The static form `BuiltinX.HTMLImageElement.whenLoaded(image)` also supports iframe images.
+
+```ts
+const image = await img.whenLoaded();
+await processImage(image);
+```
+
+### Window query parameters
+
+`window.setParam(name, value, options?)` and `window.deleteParam(name)` change the
+address bar using `history.replaceState`, preserving `history.state`. They do not
+reload the page, add a history entry, dispatch `popstate`/`hashchange`, or notify
+framework routers. Static forms `BuiltinX.Window.setParam(targetWindow, name,
+value, options?)` and `BuiltinX.Window.deleteParam(targetWindow, name)` also work
+with accessible iframe windows using that window's own location and history.
+
+The value argument is required. Options accept `Partial<SetParamOptions>` (the
+type is exported from `builtinx/dom`):
+
+- `removeIfNull` defaults to `true`: null/undefined delete all entries for the key.
+  When false, null/undefined become an empty string.
+- `addIfEmpty` defaults to `false`: empty values update existing keys, but do not
+  add missing keys unless this option is true. `removeIfNull` takes precedence.
+- Setting a value uses native `URLSearchParams.set` semantics, collapsing duplicate
+  entries for that key. Deleting removes every entry for the key. Query encoding
+  may be normalized by `URLSearchParams`; unchanged URLs skip `replaceState`.
+
+Unlike `URL.setParam`, an empty string does not delete an existing key here.
+
+```ts
+window.setParam('page', '2');
+window.setParam('q', '', { addIfEmpty: true });
+window.setParam('q', null, { removeIfNull: false, addIfEmpty: true });
+window.deleteParam('page');
+```
 
 ### Node and MutationObserver
 
 - `Node.ownText()` returns direct child text only.
-- `Node.isTextNode()` and `Node.isNewLineTextNode()`.
+- `Node.isTextNode()` identifies Text nodes.
+- `Node.isCommentNode()` identifies Comment nodes. The static form `BuiltinX.Node.isCommentNode(node)` also supports nodes from other windows.
+- `Node.isLineBreakTextNode()` identifies Text nodes containing only whitespace and at least one CR or LF.
+- `Node.isWhitespaceTextNode()` identifies Text nodes containing only JavaScript whitespace (`\s`), including empty Text nodes. Both whitespace predicates also have static forms on `BuiltinX.Node`.
+- `Node.isBr()` and `Node.isFont()` identify HTML `<br>` and `<font>` elements, including in XHTML documents.
+- `Node.isBlockTag()` checks a fixed HTML tag list: `div`, `blockquote`, `p`, `li`, `td`, `th`, `body`, `section`, `article`, `main`, `aside`, `header`, and `footer`. It ignores CSS and does not cover every element with a default block display. These three predicates also have static forms on `BuiltinX.Node` for nodes from other windows.
 - `Node.observe(callback, options?)` wraps `MutationObserver` with optional debouncing, exclusion predicates, lifecycle callbacks, and the observed node as a callback argument. Set `debounce` to `false` to invoke each mutation callback directly.
 
 ```ts
@@ -361,7 +405,7 @@ The main entry exports these utility classes and types:
 - `Stack<T>`: LIFO stack with `push`, `pop`, `peek`, `clear`, `size`, and iteration.
 - `Lazy<T>`: lazy value wrapper with `value`, `isValueCreated`, and `reset`. A `null` or `undefined` factory result still counts as created and remains cached until reset.
 - `StringBuilder`: chainable string accumulation.
-- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds`.
+- `TimeSpan`: integer-millisecond duration factory and arithmetic helpers. Its public constructor rejects non-finite, fractional, and unsafe millisecond values; single-unit factories round fractional inputs. `parse(str, ...formats)` accepts `hours:minutes:seconds` and `days.hours:minutes:seconds` by default, or tries custom formats in order when supplied.
 - `Timer.every(timeSpanOrMs, signal?)`: async generator that yields at an interval until it is closed or the optional `AbortSignal` aborts.
 - `HttpError`: error type used by `BuiltinX.Http.request`.
 
@@ -375,6 +419,62 @@ for await (const _ of Timer.every(TimeSpan.fromSeconds(1))) {
   console.log("tick");
 }
 ```
+
+### TimeSpan parsing and formatting
+
+```ts
+TimeSpan.parse("1.2:3:4"); // default format
+TimeSpan.parse("01:30", "HH:mm:ss", "HH:mm"); // first matching format
+TimeSpan.parse("-2 01:30:00.125", "D HH:mm:ss.SSS");
+TimeSpan.parse("1:30 pm", "h:mm a");
+TimeSpan.parse("2 days 03h", "D[ days ]HH[h]");
+
+const formats = ["HH:mm:ss.SSS", "HH:mm:ss.sss", "HH:mm:ss"];
+TimeSpan.parse("01:30:00.125", ...formats);
+
+const duration = TimeSpan.from(2, 13, 4, 5, 6);
+duration.toString("D HH:mm:ss.SSS"); // "2 13:04:05.006"
+duration.toString("dd h:mm:ss.sss a"); // "02 1:04:05.006 pm"
+duration.toString(); // "2.13:4:5" (original default output)
+```
+
+Custom formats use these Day.js-style tokens for duration components:
+
+| Token | Component | Accepted values |
+| --- | --- | --- |
+| `D`, `d` | Days | One or more digits |
+| `DD`, `dd` | Days | At least two digits, including values over 99 |
+| `H`, `HH` | Hours | 0–23 |
+| `h`, `hh` | Hours with `A` or `a` | 1–12 |
+| `m`, `mm` | Minutes | 0–59 |
+| `s`, `ss` | Seconds | 0–59 |
+| `SSS`, `sss` | Milliseconds | Exactly three digits, 000–999 |
+| `A` | Meridiem | `AM` or `PM` |
+| `a` | Meridiem | `am` or `pm` |
+
+Single hour, minute, and second tokens accept one or two digits; doubled tokens
+require exactly two. `d`/`dd` are aliases for day counts, not weekdays.
+`12 AM` means hour 0 and `12 PM` means hour 12. `h`/`hh` require `A`/`a`;
+`H`/`HH` cannot be combined with them. Missing components default to zero.
+A leading `-` negates the whole duration. Enclose literal text in `[brackets]`;
+punctuation outside brackets is matched literally.
+
+Every supplied format is validated before matching. Unsupported tokens, duplicate
+components, and invalid meridiem combinations throw. Inputs must match a supplied
+format completely, including case, spacing, digit widths, and component ranges;
+out-of-range components allow the next format to be tried. If none matches, parsing
+throws. Millisecond totals outside the safe integer range throw `RangeError`.
+Omitting formats preserves the existing default parser's behavior.
+
+`toString(format)` uses the same tokens and literal syntax. Single tokens produce
+unpadded components; doubled tokens pad to at least two digits, and milliseconds
+always use three digits. Components use absolute values, with one leading `-` for
+negative durations. Hours, minutes, and seconds are component values rather than
+totals; omitted components are not displayed or rounded. Formatting allows repeated
+tokens and standalone `h`/`hh` or `A`/`a`. Empty formats produce an empty body, and
+literal-only formats are supported. Unsupported tokens and malformed brackets throw.
+Calling `toString()` without a format preserves its original output, including its
+negative-component notation and omission of milliseconds.
 
 ## TypeScript
 

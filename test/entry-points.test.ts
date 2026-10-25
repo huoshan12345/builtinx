@@ -12,6 +12,8 @@ describe('BuiltinX entry points', () => {
   it('imports core helpers without DOM globals', async () => {
     vi.stubGlobal('Node', undefined);
     vi.stubGlobal('Element', undefined);
+    vi.stubGlobal('HTMLImageElement', undefined);
+    vi.stubGlobal('Window', undefined);
     vi.stubGlobal('document', undefined);
     vi.stubGlobal('window', undefined);
 
@@ -21,6 +23,8 @@ describe('BuiltinX entry points', () => {
     expect(BuiltinX.isString('hello')).toBe(true);
     expect(BuiltinX).not.toHaveProperty('isNode');
     expect(BuiltinX).not.toHaveProperty('isElement');
+    expect(BuiltinX).not.toHaveProperty('HTMLImageElement');
+    expect(BuiltinX).not.toHaveProperty('Window');
   });
 
   it('adds DOM guards to the existing namespace only when the DOM entry loads', async () => {
@@ -36,5 +40,8 @@ describe('BuiltinX entry points', () => {
     expect(BuiltinX.isNode(document.createTextNode('hello'))).toBe(true);
     expect(BuiltinX.isElement(document.createTextNode('hello'))).toBe(false);
     expect(BuiltinX.isElement(document.createElement('div'))).toBe(true);
+    expect(BuiltinX.HTMLImageElement.whenLoaded).toBeTypeOf('function');
+    expect(BuiltinX.Window.setParam).toBeTypeOf('function');
+    expect(BuiltinX.Window.deleteParam).toBeTypeOf('function');
   });
 });
