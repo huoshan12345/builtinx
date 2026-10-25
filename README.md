@@ -262,6 +262,8 @@ Load these with `import "builtinx/dom"` after the core entry.
 
 - `Node.ownText()` returns direct child text only.
 - `Node.isTextNode()` and `Node.isNewLineTextNode()`.
+- `Node.isBr()` and `Node.isFont()` identify HTML `<br>` and `<font>` elements, including in XHTML documents.
+- `Node.isBlockTag()` checks a fixed HTML tag list: `div`, `blockquote`, `p`, `li`, `td`, `th`, `body`, `section`, `article`, `main`, `aside`, `header`, and `footer`. It ignores CSS and does not cover every element with a default block display. These three predicates also have static forms on `BuiltinX.Node` for nodes from other windows.
 - `Node.observe(callback, options?)` wraps `MutationObserver` with optional debouncing, exclusion predicates, lifecycle callbacks, and the observed node as a callback argument. Set `debounce` to `false` to invoke each mutation callback directly.
 
 ```ts

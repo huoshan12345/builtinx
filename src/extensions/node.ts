@@ -1,8 +1,22 @@
 import { debounce, definePropertyIfAbsent } from '../helpers/utils.js';
+import { isElement } from '../helpers/type.dom.js';
 import { MutationObserverOptions, type MutationObserverOptionsInit, type NodeMutationCallback } from '../types/mutation-observer-options.js';
 
 declare global {
   interface Node {
+    /** Returns true for an HTML <br> element, ignoring CSS. */
+    isBr(): boolean;
+
+    /** Returns true for an HTML <font> element, ignoring CSS. */
+    isFont(): boolean;
+
+    /**
+     * Tests membership in the fixed HTML block-tag list, ignoring CSS.
+     * Includes div, blockquote, p, li, td, th, body, section, article, main,
+     * aside, header, and footer; this is not an exhaustive list of block elements.
+     */
+    isBlockTag(): boolean;
+
     /**
      * Returns concatenated text of direct child text nodes only.
      * Descendant element text is excluded.
@@ -24,6 +38,31 @@ declare global {
      */
     observe(callback: NodeMutationCallback, options?: MutationObserverOptionsInit): MutationObserver;
   }
+}
+
+const htmlNamespace = 'http://www.w3.org/1999/xhtml';
+const blockTags = new Set([
+  'div', 'blockquote', 'p', 'li', 'td', 'th', 'body',
+  'section', 'article', 'main', 'aside', 'header', 'footer',
+]);
+
+/** Tests for an HTML <br> element, including in XHTML documents. Ignores CSS. */
+export function isBr(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && node.localName === 'br';
+}
+
+/** Tests for an HTML <font> element, including in XHTML documents. Ignores CSS. */
+export function isFont(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && node.localName === 'font';
+}
+
+/**
+ * Tests for an HTML tag in the fixed list: div, blockquote, p, li, td, th, body,
+ * section, article, main, aside, header, footer. Ignores CSS and does not include
+ * every element with a default block display.
+ */
+export function isBlockTag(node: Node): boolean {
+  return isElement(node) && node.namespaceURI === htmlNamespace && blockTags.has(node.localName);
 }
 
 /** Returns the combined text of direct child text nodes, or the text node's own content. */
@@ -114,6 +153,18 @@ export function observe(
   observer.observe(node, opts.toNativeInit());
   return observer;
 }
+
+definePropertyIfAbsent(Node.prototype, "isBr", function (this: Node): boolean {
+  return isBr(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isFont", function (this: Node): boolean {
+  return isFont(this);
+});
+
+definePropertyIfAbsent(Node.prototype, "isBlockTag", function (this: Node): boolean {
+  return isBlockTag(this);
+});
 
 definePropertyIfAbsent(Node.prototype, "ownText", function (this: Node): string {
   return ownText(this);
