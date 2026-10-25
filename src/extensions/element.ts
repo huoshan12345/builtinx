@@ -1,7 +1,6 @@
 import { definePropertyIfAbsent } from '../helpers/utils.js';
 import { isBr, isLineBreakTextNode } from './node.js';
-
-type StyledElement = Element & ElementCSSInlineStyle;
+import type { StyledElement } from '../types/dom.js';
 
 declare global {
   interface Element {

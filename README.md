@@ -268,6 +268,35 @@ const image = await img.whenLoaded();
 await processImage(image);
 ```
 
+### Window query parameters
+
+`window.setParam(name, value, options?)` and `window.deleteParam(name)` change the
+address bar using `history.replaceState`, preserving `history.state`. They do not
+reload the page, add a history entry, dispatch `popstate`/`hashchange`, or notify
+framework routers. Static forms `BuiltinX.Window.setParam(targetWindow, name,
+value, options?)` and `BuiltinX.Window.deleteParam(targetWindow, name)` also work
+with accessible iframe windows using that window's own location and history.
+
+The value argument is required. Options accept `Partial<SetParamOptions>` (the
+type is exported from `builtinx/dom`):
+
+- `removeIfNull` defaults to `true`: null/undefined delete all entries for the key.
+  When false, null/undefined become an empty string.
+- `addIfEmpty` defaults to `false`: empty values update existing keys, but do not
+  add missing keys unless this option is true. `removeIfNull` takes precedence.
+- Setting a value uses native `URLSearchParams.set` semantics, collapsing duplicate
+  entries for that key. Deleting removes every entry for the key. Query encoding
+  may be normalized by `URLSearchParams`; unchanged URLs skip `replaceState`.
+
+Unlike `URL.setParam`, an empty string does not delete an existing key here.
+
+```ts
+window.setParam('page', '2');
+window.setParam('q', '', { addIfEmpty: true });
+window.setParam('q', null, { removeIfNull: false, addIfEmpty: true });
+window.deleteParam('page');
+```
+
 ### Node and MutationObserver
 
 - `Node.ownText()` returns direct child text only.
