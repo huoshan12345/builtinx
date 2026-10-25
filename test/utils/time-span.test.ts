@@ -107,6 +107,81 @@ describe('TimeSpan formatting', () => {
   });
 });
 
+describe('TimeSpan total-unit formatting', () => {
+  const options = { totalHighestUnit: true };
+
+  it.each([
+    ['h:m:s', '26:3:4'],
+    ['HH:mm:ss.SSS', '26:03:04.005'],
+    ['mm:ss', '1563:04'],
+    ['ss.SSS', '93784.005'],
+    ['sss', '93784005'],
+    ['SSS', '93784005'],
+    ['d HH:mm:ss', '1 02:03:04'],
+    ['DD h:mm:ss a', '01 2:03:04 am'],
+  ])('formats the largest unit as a total for %s', (format, expected) => {
+    expect(TimeSpan.from(1, 2, 3, 4, 5).toString(format, options)).toBe(expected);
+  });
+
+  it('selects the largest unit regardless of token order, aliases, or literals', () => {
+    const duration = TimeSpan.from(1, 2, 3, 4, 5);
+    expect(duration.toString('ss:mm:HH [D d]', options)).toBe('04:03:26 D d');
+    expect(duration.toString('h HH hh', options)).toBe('26 26 26');
+    expect(duration.toString('dd HH', options)).toBe('01 02');
+  });
+
+  it('truncates fractional totals and preserves minimum padding', () => {
+    expect(TimeSpan.from(0, 1, 2, 59, 999).toString('mm', options)).toBe('62');
+    expect(TimeSpan.from(0, 1, 2, 59, 999).toString('ss', options)).toBe('3779');
+    expect(TimeSpan.fromMinutes(3).toString('hh:mm', options)).toBe('00:03');
+    expect(TimeSpan.fromMilliseconds(1).toString('SSS', options)).toBe('001');
+    expect(TimeSpan.fromHours(123).toString('HH', options)).toBe('123');
+    expect(TimeSpan.zero.toString('h:m:s', options)).toBe('0:0:0');
+  });
+
+  it.each(['h:mm A', 'hh:mm a', 'HH:mm A', 'a H:mm', 'hh:mm A [D]'])
+  ('rejects total hours with meridiem in %s regardless of duration', (format) => {
+    for (const duration of [TimeSpan.zero, TimeSpan.fromHours(2), TimeSpan.fromHours(26)]) {
+      expect(() => duration.toString(format, options))
+        .toThrow('Total hours cannot be combined with A/a');
+    }
+  });
+
+  it('allows meridiem outside total-hour formats and ignores escaped meridiem tokens', () => {
+    const duration = TimeSpan.from(1, 2, 3);
+    expect(duration.toString('h:mm A', { totalHighestUnit: false })).toBe('2:03 AM');
+    expect(duration.toString('D h:mm A', options)).toBe('1 2:03 AM');
+    expect(duration.toString('h:mm a dd', options)).toBe('2:03 am 01');
+    expect(duration.toString('HH:mm [A/a]', options)).toBe('26:03 A/a');
+  });
+
+  it('keeps lower components and a single leading minus for negative values', () => {
+    expect(TimeSpan.from(-1, -2, -3, -4, -5).toString('hh:mm:ss.SSS', options))
+      .toBe('-26:03:04.005');
+    expect(TimeSpan.fromMilliseconds(-1).toString('ss.SSS', options)).toBe('-00.001');
+    expect(TimeSpan.fromMilliseconds(-1).toString('sss', options)).toBe('-001');
+  });
+
+  it('preserves default behavior unless enabled with an explicit format', () => {
+    const duration = TimeSpan.from(1, 14, 3, 4);
+    expect(duration.toString('h:m:s')).toBe('2:3:4');
+    expect(duration.toString('h:m:s', {})).toBe('2:3:4');
+    expect(duration.toString('h:m:s', { totalHighestUnit: false })).toBe('2:3:4');
+    expect(duration.toString('h:m:s', options)).toBe('38:3:4');
+    expect(duration.toString(undefined, options)).toBe(duration.toString());
+    expect(duration.toString('[HH]', options)).toBe('HH');
+    expect(duration.toString('', options)).toBe('');
+    expect(duration.toString('A a', options)).toBe('PM pm');
+  });
+
+  it('preserves safe integer extremes when milliseconds are the largest unit', () => {
+    expect(TimeSpan.maxValue.toString('SSS', options)).toBe(String(Number.MAX_SAFE_INTEGER));
+    expect(TimeSpan.minValue.toString('sss', options)).toBe(String(Number.MIN_SAFE_INTEGER));
+    expect(TimeSpan.maxValue.toString('HH:mm:ss.SSS', options)).toBe('2501999792:59:00.991');
+    expect(TimeSpan.minValue.toString('HH:mm:ss.SSS', options)).toBe('-2501999792:59:00.991');
+  });
+});
+
 describe('TimeSpan format parsing', () => {
   it.each(['D', 'd', 'DD', 'dd'])('parses day token %s including durations over 99 days', (token) => {
     expect(TimeSpan.parse('123 04:05:06.007', `${token} HH:mm:ss.SSS`).totalMilliseconds)

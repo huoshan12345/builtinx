@@ -436,6 +436,8 @@ const duration = TimeSpan.from(2, 13, 4, 5, 6);
 duration.toString("D HH:mm:ss.SSS"); // "2 13:04:05.006"
 duration.toString("dd h:mm:ss.sss a"); // "02 1:04:05.006 pm"
 duration.toString(); // "2.13:4:5" (original default output)
+duration.toString("h:mm:ss", { totalHighestUnit: true }); // "61:04:05"
+duration.toString("mm:ss", { totalHighestUnit: true }); // "3664:05"
 ```
 
 Custom formats use these Day.js-style tokens for duration components:
@@ -475,6 +477,19 @@ tokens and standalone `h`/`hh` or `A`/`a`. Empty formats produce an empty body, 
 literal-only formats are supported. Unsupported tokens and malformed brackets throw.
 Calling `toString()` without a format preserves its original output, including its
 negative-component notation and omission of milliseconds.
+
+`toString(format, { totalHighestUnit: true })` displays the largest numeric unit in
+the format as a total, including all larger units. The largest unit is determined
+by unit size, regardless of token order or bracket literals. Totals are truncated
+to integers; smaller components retain their usual values. Padding is a minimum
+width, so totals may exceed the token width. When hours are the largest unit,
+`h`/`hh` also show total hours instead of using the 12-hour clock. Combining total
+hours with `A`/`a` throws, regardless of the duration's value. Formats containing
+days (such as `D h:mm A`) remain valid, as do escaped literals such as `[A]`.
+Otherwise, `A`/`a` keep their existing component-hour meaning.
+The option defaults to false and applies
+only to explicit formats. Parsing keeps its existing component ranges, so total
+output exceeding those ranges cannot be parsed using the same custom format.
 
 ## TypeScript
 

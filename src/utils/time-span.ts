@@ -4,6 +4,24 @@ const MILLIS_PER_HOUR = MILLIS_PER_MINUTE * 60;     //  3,600,000
 const MILLIS_PER_DAY = MILLIS_PER_HOUR * 24;        // 86,400,000
 
 type DurationField = 'days' | 'hours' | 'minutes' | 'seconds' | 'milliseconds' | 'meridiem';
+type NumericDurationField = Exclude<DurationField, 'meridiem'>;
+
+const MILLIS_PER_UNIT: Record<NumericDurationField, number> = {
+  days: MILLIS_PER_DAY,
+  hours: MILLIS_PER_HOUR,
+  minutes: MILLIS_PER_MINUTE,
+  seconds: MILLIS_PER_SECOND,
+  milliseconds: 1,
+};
+
+export interface TimeSpanFormatOptions {
+  /**
+   * Displays the largest unit present in the format as a total, truncated to an
+   * integer. For example, 1 day and 2 hours becomes 26 with the format h:m:s.
+   * Applies only to explicit formats. Defaults to false.
+   */
+  totalHighestUnit?: boolean;
+}
 
 const FORMAT_TOKENS: Record<string, { field: DurationField; pattern: string }> = {
   D: { field: 'days', pattern: '\\d+' },
@@ -283,9 +301,31 @@ export class TimeSpan {
    * Negative durations have one leading minus; omitted components are not displayed.
    * Formatting permits repeated tokens and h/hh without A/a. Without a format,
    * preserves the original unpadded output (which omits milliseconds).
+   * With totalHighestUnit, the largest formatted unit includes all larger units,
+   * truncated to an integer. Total hours bypass h/hh's 12-hour conversion.
+   * Throws if total hours are combined with A/a.
    */
-  public toString(format?: string): string {
+  public toString(format?: string, options?: TimeSpanFormatOptions): string {
     if (format !== undefined) {
+      const parts = tokenizeDurationFormat(format);
+      let highestUnit: NumericDurationField | undefined;
+      if (options?.totalHighestUnit) {
+        for (const { token } of parts) {
+          if (token === undefined) {
+            continue;
+          }
+          const field = FORMAT_TOKENS[token].field;
+          if (field !== 'meridiem'
+            && (highestUnit === undefined || MILLIS_PER_UNIT[field] > MILLIS_PER_UNIT[highestUnit])) {
+            highestUnit = field;
+          }
+        }
+      }
+
+      if (highestUnit === 'hours' && parts.some(({ token }) => token === 'A' || token === 'a')) {
+        throw new Error('Total hours cannot be combined with A/a in a duration format.');
+      }
+
       const hours = Math.abs(this.hours);
       const values = {
         days: Math.abs(this.days),
@@ -294,7 +334,10 @@ export class TimeSpan {
         seconds: Math.abs(this.seconds),
         milliseconds: Math.abs(this.milliseconds),
       };
-      const result = tokenizeDurationFormat(format).map(({ token, literal }) => {
+      if (highestUnit !== undefined) {
+        values[highestUnit] = Math.floor(Math.abs(this._millis) / MILLIS_PER_UNIT[highestUnit]);
+      }
+      const result = parts.map(({ token, literal }) => {
         if (token === undefined) {
           return literal!;
         }
@@ -302,8 +345,9 @@ export class TimeSpan {
           const meridiem = hours < 12 ? 'AM' : 'PM';
           return token === 'a' ? meridiem.toLowerCase() : meridiem;
         }
-        const field = FORMAT_TOKENS[token].field as Exclude<DurationField, 'meridiem'>;
-        const value = token === 'h' || token === 'hh' ? hours % 12 || 12 : values[field];
+        const field = FORMAT_TOKENS[token].field as NumericDurationField;
+        const useTwelveHour = (token === 'h' || token === 'hh') && highestUnit !== 'hours';
+        const value = useTwelveHour ? hours % 12 || 12 : values[field];
         return String(value).padStart(token.length, '0');
       }).join('');
       return this._millis < 0 ? '-' + result : result;
